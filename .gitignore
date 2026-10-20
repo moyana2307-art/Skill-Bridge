@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Environment files - never commit real secrets
+.env
+.env.local
+.env.*.local
+
+# React production build
+frontend/build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor and OS files
+.DS_Store
+.vscode/
+.idea/

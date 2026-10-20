@@ -1,0 +1,23 @@
+.placeholder__card {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 56px 32px;
+}
+
+.placeholder__icon {
+  color: var(--color-warning);
+  margin: 0 auto 18px;
+}
+
+.placeholder__card h1 {
+  font-size: 1.7rem;
+  margin-bottom: 12px;
+}
+
+.placeholder__card p {
+  margin-bottom: 24px;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
