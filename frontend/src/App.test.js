@@ -9,5 +9,5 @@ test('renders the SkillBridge AI brand in the navigation', () => {
 
 test('renders the landing page headline', () => {
   render(<App />);
-  expect(screen.getByText(/Turn your skills into/i)).toBeInTheDocument();
+  expect(screen.getByText(/Build skills/i)).toBeInTheDocument();
 });

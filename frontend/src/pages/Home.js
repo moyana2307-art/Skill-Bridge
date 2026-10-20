@@ -67,18 +67,16 @@ function Home() {
           <div className="hero__content">
             <span className="badge">Built for young people in Zimbabwe</span>
             <h1>
-              Turn your skills into{' '}
-              <span className="hero__highlight">real opportunities</span>
+              Build skills.{' '}
+              <span className="hero__highlight">Unlock opportunities.</span>
             </h1>
             <p className="hero__subtitle">
-              SkillBridge AI helps students, graduates and self-learners
-              understand their skill gaps, build personalised learning
-              roadmaps, and discover jobs, internships and scholarships that
-              match their goals.
+              Your AI-powered path to a better future - built for students,
+              graduates and self-learners in Zimbabwe.
             </p>
             <div className="hero__actions">
-              <Link to="/register" className="btn btn-secondary btn-lg">
-                Get Started Free
+              <Link to="/register" className="btn btn-primary btn-lg">
+                Start your journey <ArrowRight size={18} />
               </Link>
               <Link to="/about" className="btn btn-outline btn-lg">
                 Learn More
@@ -121,7 +119,7 @@ function Home() {
       </section>
 
       {/* Features section */}
-      <section className="section section--white">
+      <section className="section section--soft">
         <div className="container">
           <h2 className="section-title text-center">
             Everything you need to grow
@@ -162,7 +160,7 @@ function Home() {
       </section>
 
       {/* Audience section */}
-      <section className="section section--white">
+      <section className="section section--soft">
         <div className="container">
           <h2 className="section-title text-center">Who is it for?</h2>
           <p className="section-subtitle text-center">

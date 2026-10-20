@@ -22,12 +22,17 @@
   margin-bottom: 12px;
 }
 
-.footer__brand svg {
-  color: var(--color-secondary);
+.footer__logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+  background-color: #ffffff;
+  padding: 2px;
 }
 
 .footer__brand-accent {
-  color: var(--color-secondary);
+  color: var(--color-accent-light);
 }
 
 .footer__about p {
@@ -56,7 +61,7 @@
 }
 
 .footer__column a:hover {
-  color: var(--color-secondary);
+  color: var(--color-accent-light);
 }
 
 .footer__bottom {

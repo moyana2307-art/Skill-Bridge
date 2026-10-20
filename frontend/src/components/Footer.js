@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { GraduationCap } from 'lucide-react';
 import './Footer.css';
 
 // Public footer shown on all public pages.
@@ -9,7 +8,11 @@ function Footer() {
       <div className="container footer__grid">
         <div className="footer__about">
           <div className="footer__brand">
-            <GraduationCap size={24} />
+            <img
+              src={`${process.env.PUBLIC_URL}/brand-logo.png`}
+              alt="SkillBridge AI logo"
+              className="footer__logo-img"
+            />
             <span>
               SkillBridge <span className="footer__brand-accent">AI</span>
             </span>

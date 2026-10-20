@@ -23,12 +23,15 @@
   color: var(--color-primary);
 }
 
-.navbar__logo-icon {
-  color: var(--color-secondary);
+.navbar__logo-img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
 .navbar__brand-accent {
-  color: var(--color-secondary);
+  color: var(--color-accent);
 }
 
 .navbar__menu {
@@ -52,7 +55,7 @@
 }
 
 .navbar__link--active {
-  color: var(--color-secondary-dark);
+  color: var(--color-accent-dark);
 }
 
 .navbar__cta {

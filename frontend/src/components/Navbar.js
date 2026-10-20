@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { GraduationCap, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import './Navbar.css';
 
 // Public navigation bar shown on all public pages.
@@ -17,7 +17,11 @@ function Navbar() {
     <header className="navbar">
       <div className="container navbar__inner">
         <Link to="/" className="navbar__brand" onClick={closeMenu}>
-          <GraduationCap className="navbar__logo-icon" size={28} />
+          <img
+            src={`${process.env.PUBLIC_URL}/brand-logo.png`}
+            alt="SkillBridge AI logo"
+            className="navbar__logo-img"
+          />
           <span>
             SkillBridge <span className="navbar__brand-accent">AI</span>
           </span>

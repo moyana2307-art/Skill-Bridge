@@ -34,7 +34,7 @@ function About() {
         </div>
       </section>
 
-      <section className="section section--white">
+      <section className="section section--soft">
         <div className="container about__mission">
           <div>
             <h2>Our mission</h2>
@@ -81,7 +81,7 @@ function About() {
         </div>
       </section>
 
-      <section className="section section--white">
+      <section className="section section--soft">
         <div className="container">
           <div className="about__disclaimer alert alert-warning">
             <AlertTriangle size={20} />

@@ -1,7 +1,7 @@
 /* ---------- Hero ---------- */
 
 .hero {
-  background: linear-gradient(160deg, var(--color-primary) 0%, var(--color-primary-dark) 60%, #071a33 100%);
+  background: linear-gradient(160deg, var(--color-primary) 0%, var(--color-primary-dark) 60%, #050f28 100%);
   color: #ffffff;
   padding: 80px 0 88px;
 }
@@ -23,7 +23,7 @@
 }
 
 .hero__highlight {
-  color: var(--color-secondary);
+  color: var(--color-accent-light);
 }
 
 .hero__subtitle {
@@ -59,7 +59,7 @@
 }
 
 .hero__note svg {
-  color: var(--color-success);
+  color: var(--color-accent-light);
 }
 
 /* Hero visual card */
@@ -78,7 +78,7 @@
 }
 
 .hero__visual-header svg {
-  color: var(--color-secondary);
+  color: var(--color-accent);
 }
 
 .hero__visual-step {
@@ -97,7 +97,7 @@
   height: 14px;
   min-width: 14px;
   border-radius: 50%;
-  background-color: var(--color-secondary);
+  background-color: var(--color-accent);
   margin-top: 6px;
 }
 
@@ -131,8 +131,8 @@
   width: 56px;
   height: 56px;
   border-radius: var(--radius-md);
-  background-color: var(--color-secondary-soft);
-  color: var(--color-secondary-dark);
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent-dark);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -205,14 +205,14 @@
 }
 
 .audience__item svg {
-  color: var(--color-success);
+  color: var(--color-accent);
   min-width: 20px;
 }
 
 /* ---------- Call to action ---------- */
 
 .cta-banner {
-  background: linear-gradient(90deg, var(--color-secondary-dark), var(--color-secondary));
+  background: linear-gradient(90deg, var(--color-accent-dark), var(--color-accent));
   padding: 48px 0;
 }
 
