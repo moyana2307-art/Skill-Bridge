@@ -1,14 +1,23 @@
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { LogOut, Menu, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
-// Public navigation bar shown on all public pages.
-// Uses a hamburger menu on small screens (state controls open/closed).
+// Main navigation bar. It changes its account links depending on whether
+// somebody is logged in. It uses a hamburger menu on small screens.
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, loading, logout } = useAuth();
+  const navigate = useNavigate();
 
   const closeMenu = () => setMenuOpen(false);
+
+  const handleLogout = async () => {
+    closeMenu();
+    await logout();
+    navigate('/');
+  };
 
   const linkClass = ({ isActive }) =>
     isActive ? 'navbar__link navbar__link--active' : 'navbar__link';
@@ -45,16 +54,53 @@ function Navbar() {
           <NavLink to="/about" className={linkClass} onClick={closeMenu}>
             About
           </NavLink>
-          <NavLink to="/login" className={linkClass} onClick={closeMenu}>
-            Log in
-          </NavLink>
-          <Link
-            to="/register"
-            className="btn btn-primary navbar__cta"
+          <NavLink
+            to="/opportunities"
+            className={linkClass}
             onClick={closeMenu}
           >
-            Get Started
-          </Link>
+            Opportunities
+          </NavLink>
+
+          {!loading && user && (
+            <>
+              <NavLink to="/goals" className={linkClass} onClick={closeMenu}>
+                Goals
+              </NavLink>
+              <NavLink to="/roadmaps" className={linkClass} onClick={closeMenu}>
+                Roadmaps
+              </NavLink>
+              <NavLink to="/skills" className={linkClass} onClick={closeMenu}>
+                My Skills
+              </NavLink>
+              <NavLink to="/profile" className={linkClass} onClick={closeMenu}>
+                Profile
+              </NavLink>
+              <span className="navbar__user">Hi, {user.name.split(' ')[0]}</span>
+              <button
+                type="button"
+                className="navbar__logout"
+                onClick={handleLogout}
+              >
+                <LogOut size={16} /> Log out
+              </button>
+            </>
+          )}
+
+          {!loading && !user && (
+            <>
+              <NavLink to="/login" className={linkClass} onClick={closeMenu}>
+                Log in
+              </NavLink>
+              <Link
+                to="/register"
+                className="btn btn-primary navbar__cta"
+                onClick={closeMenu}
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>

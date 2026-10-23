@@ -1,36 +1,46 @@
 // SkillBridge AI - Backend server
-// Stage 1: minimal Express server with a health-check endpoint.
+//
+// This file only starts the server. The app itself is built in app.js so it
+// can be reused (and tested) without opening a port.
+const app = require('./app');
+const { env, assertDatabaseConfigured, assertAuthConfigured } = require('./config/env');
+const { pool } = require('./config/db');
 
-// Import installed packages
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config(); // Loads variables from the .env file into process.env
+// Fail fast with a clear message if the database is not configured.
+try {
+  assertDatabaseConfigured();
+  assertAuthConfigured();
+} catch (err) {
+  console.error(`\nCannot start the server: ${err.message}\n`);
+  process.exit(1);
+}
 
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-// CORS: allow the React dev server (runs on port 3000) to call this API.
-// Without this, the browser would block the requests for security.
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  })
-);
-
-// Parse incoming JSON request bodies so we can read req.body
-app.use(express.json());
-
-// Health-check endpoint: used to confirm the server is running.
-// Test with: GET http://localhost:5000/api/health
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'SkillBridge AI API is running',
-    timestamp: new Date().toISOString(),
-  });
+const server = app.listen(env.port, () => {
+  console.log(`SkillBridge AI backend running on http://localhost:${env.port} (${env.nodeEnv})`);
+  console.log(`Health check: http://localhost:${env.port}/api/health`);
 });
 
-// Start listening for requests
-app.listen(PORT, () => {
-  console.log(`SkillBridge AI backend running on http://localhost:${PORT}`);
+// Close the database pool and stop the server when the process is stopped,
+// so nothing is left half-open.
+function shutdown(signal) {
+  console.log(`\n${signal} received, shutting down...`);
+
+  server.close(async () => {
+    try {
+      await pool.end();
+    } catch (err) {
+      console.error('Error while closing the database pool:', err.message);
+    }
+    process.exit(0);
+  });
+
+  // Do not hang forever if a connection refuses to close.
+  setTimeout(() => process.exit(1), 5000).unref();
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
 });

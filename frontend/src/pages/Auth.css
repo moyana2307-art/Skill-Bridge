@@ -1,0 +1,62 @@
+/* Shared styles for the login and registration pages. */
+
+.auth {
+  background:
+    radial-gradient(circle at top right, var(--color-accent-soft), transparent 45%),
+    var(--color-section);
+  padding: 56px 0 72px;
+  min-height: calc(100vh - 68px);
+}
+
+.auth__card {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.auth__header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.auth__header h1 {
+  margin-bottom: 8px;
+}
+
+.auth__header p {
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.auth__icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent-dark);
+}
+
+.auth__hint {
+  margin-top: 6px;
+  font-size: 0.85rem;
+}
+
+.auth__footer {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 600px) {
+  .auth {
+    padding: 36px 0 52px;
+  }
+
+  .auth__card {
+    padding: 22px;
+  }
+}

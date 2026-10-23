@@ -37,15 +37,15 @@
 .navbar__menu {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .navbar__link {
-  padding: 8px 14px;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
   color: var(--color-text-light);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   transition: color 0.2s ease, background-color 0.2s ease;
 }
 
@@ -63,6 +63,40 @@
   margin-left: 8px;
 }
 
+.navbar__user {
+  padding: 8px 4px 8px 12px;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.navbar__logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-light);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.navbar__logout:hover {
+  color: var(--color-error);
+  background-color: var(--color-error-soft);
+}
+
+.navbar__logout:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 .navbar__toggle {
   display: none;
   background: none;
@@ -72,8 +106,8 @@
   padding: 8px;
 }
 
-/* Mobile layout: stack the menu vertically behind a hamburger button */
-@media (max-width: 768px) {
+/* Stack the menu vertically behind a hamburger button when space is tight. */
+@media (max-width: 1024px) {
   .navbar__toggle {
     display: block;
   }
@@ -104,5 +138,13 @@
   .navbar__cta {
     margin-left: 0;
     margin-top: 8px;
+  }
+
+  .navbar__user {
+    padding: 8px 14px;
+  }
+
+  .navbar__logout {
+    padding: 12px 14px;
   }
 }

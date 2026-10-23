@@ -203,6 +203,11 @@ p {
   font-size: 1.1rem;
 }
 
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+}
+
 .btn-block {
   display: block;
   width: 100%;
@@ -265,6 +270,13 @@ p {
   resize: vertical;
 }
 
+.form-error {
+  margin-top: 6px;
+  color: var(--color-error);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 /* ---------- Alerts (success / warning / error / info) ---------- */
 
 .alert {
@@ -309,6 +321,38 @@ p {
   font-weight: 600;
   background-color: var(--color-accent-soft);
   color: var(--color-accent-dark);
+}
+
+/* Shared status pills used by goals, roadmaps, and tasks. */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: var(--color-section);
+  color: var(--color-text-light);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.status-badge--active,
+.status-badge--completed {
+  background-color: var(--color-success-soft);
+  color: #166534;
+}
+
+.status-badge--in_progress {
+  background-color: var(--color-warning-soft);
+  color: #92400e;
+}
+
+.status-badge--archived,
+.status-badge--not_started {
+  background-color: var(--color-section);
+  color: var(--color-text-light);
 }
 
 /* ---------- Loading spinner ---------- */

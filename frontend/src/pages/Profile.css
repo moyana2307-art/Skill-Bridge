@@ -1,0 +1,106 @@
+.profile__header {
+  margin-bottom: 28px;
+}
+
+.profile__header h1 {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.profile__header p {
+  max-width: 640px;
+}
+
+.profile__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.7fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.profile__form h2,
+.profile__account h2 {
+  margin-bottom: 18px;
+  font-size: 1.3rem;
+}
+
+.profile__two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.profile__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.profile__account {
+  position: sticky;
+  top: 92px;
+}
+
+.profile__account-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-accent-dark);
+}
+
+.profile__account-row:last-of-type {
+  border-bottom: none;
+}
+
+.profile__account-row > div {
+  min-width: 0;
+}
+
+.profile__account-label {
+  display: block;
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.profile__account-row strong {
+  color: var(--color-primary);
+  overflow-wrap: anywhere;
+}
+
+.profile__privacy {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-section);
+  font-size: 0.9rem;
+}
+
+.profile__narrow {
+  max-width: 620px;
+}
+
+@media (max-width: 900px) {
+  .profile__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile__account {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .profile__two-columns {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .profile__actions .btn {
+    width: 100%;
+  }
+}

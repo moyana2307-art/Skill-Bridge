@@ -199,17 +199,6 @@ function Home() {
           </Link>
         </div>
       </section>
-
-      {/* Quick links (temporary - replaced by real pages in later stages) */}
-      <section className="section">
-        <div className="container text-center">
-          <p className="home__placeholder-note">
-            Placeholder pages:{" "}
-            <Link to="/login">Log in</Link> and{" "}
-            <Link to="/register">Register</Link> are built in Stage 5.
-          </p>
-        </div>
-      </section>
     </div>
   );
 }
