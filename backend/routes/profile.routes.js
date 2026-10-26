@@ -2,6 +2,8 @@
 //
 //   GET    /api/profile                  read the current user's profile
 //   PATCH  /api/profile                  update the current user's profile
+//   POST   /api/profile/avatar           upload a profile picture
+//   DELETE /api/profile/avatar           remove the profile picture
 //   GET    /api/profile/skills           list the current user's skills
 //   POST   /api/profile/skills           add a catalogue skill
 //   PATCH  /api/profile/skills/:skillId  change proficiency
@@ -11,6 +13,7 @@ const profileController = require('../controllers/profile.controller');
 const userSkillsController = require('../controllers/userSkills.controller');
 const asyncHandler = require('../middleware/asyncHandler');
 const requireAuth = require('../middleware/requireAuth');
+const { avatarUpload } = require('../middleware/avatarUpload');
 const validate = require('../middleware/validate');
 const { updateProfileBody } = require('../validators/profile.validator');
 const {
@@ -30,6 +33,12 @@ router.patch(
   validate({ body: updateProfileBody }),
   asyncHandler(profileController.update)
 );
+router.post(
+  '/avatar',
+  avatarUpload,
+  asyncHandler(profileController.uploadAvatar)
+);
+router.delete('/avatar', asyncHandler(profileController.removeAvatar));
 
 router.get('/skills', asyncHandler(userSkillsController.list));
 router.post(

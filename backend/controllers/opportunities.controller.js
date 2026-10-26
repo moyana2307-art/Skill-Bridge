@@ -1,5 +1,6 @@
 // Opportunity endpoints (jobs, internships, scholarships, training, courses).
 const opportunitiesService = require('../services/opportunities.service');
+const { syncOpportunities } = require('../services/opportunitySync.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 
@@ -78,6 +79,16 @@ async function matches(req, res) {
   });
 }
 
+// POST /api/opportunities/sync (admin)
+async function sync(req, res) {
+  const result = await syncOpportunities();
+
+  return sendSuccess(res, {
+    data: result,
+    message: 'Opportunity sync finished',
+  });
+}
+
 // GET /api/opportunities/saved
 async function saved(req, res) {
   const opportunities = await opportunitiesService.listSavedOpportunities(
@@ -134,4 +145,5 @@ module.exports = {
   saved,
   save,
   unsave,
+  sync,
 };

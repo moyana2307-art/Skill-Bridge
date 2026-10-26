@@ -1,7 +1,4 @@
-// Reads and updates the profile of the logged-in user.
-// Every query is limited to the user id supplied by the auth middleware, so a
-// user can never read or change somebody else's profile.
-const { pool } = require('../config/db');
+﻿const { pool } = require('../config/db');
 
 const PROFILE_FIELDS = [
   'education_level',
@@ -11,11 +8,18 @@ const PROFILE_FIELDS = [
   'learning_preferences',
 ];
 
+function toAvatar(avatarData, avatarMime) {
+  if (!avatarData || !avatarMime) return null;
+
+  return `data:${avatarMime};base64,${Buffer.from(avatarData).toString('base64')}`;
+}
+
 async function getProfile(userId) {
   const [rows] = await pool.execute(
     `SELECT u.id, u.name, u.email, u.role, u.created_at,
             p.education_level, p.work_experience, p.career_interests,
-            p.location, p.learning_preferences, p.updated_at AS profile_updated_at
+            p.location, p.learning_preferences, p.avatar_data, p.avatar_mime,
+            p.updated_at AS profile_updated_at
      FROM users u
      LEFT JOIN user_profiles p ON p.user_id = u.id
      WHERE u.id = ?`,
@@ -32,6 +36,7 @@ async function getProfile(userId) {
       email: row.email,
       role: row.role,
       created_at: row.created_at,
+      avatar: toAvatar(row.avatar_data, row.avatar_mime),
     },
     profile: {
       education_level: row.education_level,
@@ -86,4 +91,29 @@ async function updateProfile(userId, changes) {
   return getProfile(userId);
 }
 
-module.exports = { getProfile, updateProfile };
+async function updateAvatar(userId, avatarData, avatarMime) {
+  await pool.execute(
+    `INSERT INTO user_profiles (user_id, avatar_data, avatar_mime)
+     VALUES (?, ?, ?) AS incoming
+     ON DUPLICATE KEY UPDATE
+       avatar_data = incoming.avatar_data,
+       avatar_mime = incoming.avatar_mime`,
+    [userId, avatarData, avatarMime]
+  );
+
+  return getProfile(userId);
+}
+
+async function removeAvatar(userId) {
+  await pool.execute(
+    `UPDATE user_profiles
+     SET avatar_data = NULL, avatar_mime = NULL
+     WHERE user_id = ?`,
+    [userId]
+  );
+
+  return getProfile(userId);
+}
+
+module.exports = { getProfile, updateProfile, updateAvatar, removeAvatar };
+

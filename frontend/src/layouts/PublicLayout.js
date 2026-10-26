@@ -8,8 +8,11 @@ import Footer from '../components/Footer';
 function PublicLayout() {
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
       <Navbar />
-      <main className="app-main">
+      <main className="app-main" id="main-content" tabIndex={-1}>
         <Outlet />
       </main>
       <Footer />

@@ -6,7 +6,7 @@ const { escapeLike } = require('../utils/sql');
 const OPPORTUNITY_COLUMNS = `
   id, title, organisation, description, opportunity_type, required_skills,
   location, is_remote, eligibility, application_deadline, application_url,
-  source_name, is_demo, is_active, created_at, updated_at
+  source_name, external_id, last_synced_at, is_active, created_at, updated_at
 `;
 
 // Only these column names may be used in an UPDATE statement.
@@ -22,7 +22,7 @@ const UPDATABLE_COLUMNS = [
   'application_deadline',
   'application_url',
   'source_name',
-  'is_demo',
+  'external_id',
   'is_active',
 ];
 
@@ -40,14 +40,13 @@ function mapOpportunity(row) {
   return {
     ...row,
     is_remote: Boolean(row.is_remote),
-    is_demo: Boolean(row.is_demo),
     is_active: Boolean(row.is_active),
   };
 }
 
 // GET /api/opportunities
 async function listOpportunities(filters) {
-  const { search, type, location, is_remote, is_active, include_demo, sort, order, page, limit } =
+  const { search, type, location, is_remote, is_active, sort, order, page, limit } =
     filters;
 
   const conditions = [];
@@ -77,10 +76,6 @@ async function listOpportunities(filters) {
   if (is_active !== undefined) {
     conditions.push('is_active = ?');
     values.push(is_active ? 1 : 0);
-  }
-
-  if (include_demo === false) {
-    conditions.push('is_demo = 0');
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';

@@ -318,6 +318,71 @@ async function deleteTask(userId, roadmapId, taskId) {
   return result.affectedRows > 0;
 }
 
+// Creates a roadmap and all of its tasks in one transaction. Used by the AI
+// generator so a failed insert never leaves half a plan in the database.
+async function createRoadmapWithTasks(userId, data, tasks) {
+  if (
+    data.career_goal_id !== undefined &&
+    data.career_goal_id !== null &&
+    !(await careerGoalsService.getGoalById(userId, data.career_goal_id))
+  ) {
+    return { status: 'goal_not_found' };
+  }
+
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [roadmapResult] = await connection.execute(
+      `INSERT INTO learning_roadmaps
+         (user_id, title, summary, career_goal_id, status)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        userId,
+        data.title,
+        data.summary ?? null,
+        data.career_goal_id ?? null,
+        data.status || 'active',
+      ]
+    );
+
+    for (const task of tasks) {
+      await connection.execute(
+        `INSERT INTO roadmap_tasks
+           (roadmap_id, title, description, skills_to_develop,
+            learning_activities, practical_project, resources,
+            estimated_duration, sort_order, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          roadmapResult.insertId,
+          task.title,
+          task.description ?? null,
+          task.skills_to_develop ?? null,
+          task.learning_activities ?? null,
+          task.practical_project ?? null,
+          task.resources ?? null,
+          task.estimated_duration ?? null,
+          task.sort_order ?? 0,
+          task.status || 'not_started',
+        ]
+      );
+    }
+
+    await connection.commit();
+
+    return {
+      status: 'created',
+      roadmap: await getRoadmapById(userId, roadmapResult.insertId),
+    };
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
   listRoadmaps,
   getRoadmapById,
@@ -327,4 +392,5 @@ module.exports = {
   createTask,
   updateTask,
   deleteTask,
+  createRoadmapWithTasks,
 };

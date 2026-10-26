@@ -5,20 +5,41 @@ const { pool } = require('../config/db');
 const ApiError = require('../utils/ApiError');
 
 const BCRYPT_ROUNDS = 12;
-const PUBLIC_USER_COLUMNS = 'id, name, email, role, created_at, updated_at';
+const PUBLIC_USER_COLUMNS = `u.id, u.name, u.email, u.role, u.created_at,
+  u.updated_at, p.avatar_data, p.avatar_mime`;
+
+function toPublicUser(row) {
+  if (!row) return null;
+
+  const { password_hash: _passwordHash, avatar_data: avatarData, avatar_mime: avatarMime, ...user } = row;
+
+  return {
+    ...user,
+    avatar:
+      avatarData && avatarMime
+        ? `data:${avatarMime};base64,${Buffer.from(avatarData).toString('base64')}`
+        : null,
+  };
+}
 
 async function findUserById(id) {
   const [rows] = await pool.execute(
-    `SELECT ${PUBLIC_USER_COLUMNS} FROM users WHERE id = ?`,
+    `SELECT ${PUBLIC_USER_COLUMNS}
+     FROM users u
+     LEFT JOIN user_profiles p ON p.user_id = u.id
+     WHERE u.id = ?`,
     [id]
   );
 
-  return rows[0] || null;
+  return toPublicUser(rows[0]);
 }
 
 async function findUserByEmailWithPassword(email) {
   const [rows] = await pool.execute(
-    `SELECT ${PUBLIC_USER_COLUMNS}, password_hash FROM users WHERE email = ?`,
+    `SELECT ${PUBLIC_USER_COLUMNS}, u.password_hash
+     FROM users u
+     LEFT JOIN user_profiles p ON p.user_id = u.id
+     WHERE u.email = ?`,
     [email]
   );
 
@@ -69,8 +90,7 @@ async function authenticate(email, password) {
   const passwordMatches = await bcrypt.compare(password, row.password_hash);
   if (!passwordMatches) return null;
 
-  const { password_hash: _passwordHash, ...user } = row;
-  return user;
+  return toPublicUser(row);
 }
 
 module.exports = {

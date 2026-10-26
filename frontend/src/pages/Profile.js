@@ -1,7 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Mail, ShieldCheck, UserRound } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Camera,
+  Mail,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  UserRound,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { profileApi } from '../api/client';
+import { aiApi, profileApi } from '../api/client';
+import { getInitials, prepareAvatarFile } from '../utils/avatar';
 import './Profile.css';
 
 const EMPTY_FORM = {
@@ -22,6 +30,14 @@ function Profile() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+  const [avatarNotice, setAvatarNotice] = useState('');
+  const avatarInputRef = useRef(null);
+  const [review, setReview] = useState(null);
+  const [reviewGeneratedAt, setReviewGeneratedAt] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState('');
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -52,6 +68,25 @@ function Profile() {
     loadProfile();
   }, [loadProfile]);
 
+  useEffect(() => {
+    let active = true;
+
+    aiApi
+      .latestProfileReview()
+      .then((response) => {
+        if (!active) return;
+        setReview(response.data.review || null);
+        setReviewGeneratedAt(response.data.generated_at || null);
+      })
+      .catch(() => {
+        // A missing review is not an error; the user can generate one.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -59,6 +94,50 @@ function Profile() {
     setFieldErrors((current) => ({ ...current, [name]: undefined }));
     setSuccess('');
     setError('');
+  };
+
+  const handleAvatarChange = async (event) => {
+    const [file] = event.target.files || [];
+    event.target.value = '';
+
+    if (!file) return;
+
+    setAvatarBusy(true);
+    setAvatarError('');
+    setAvatarNotice('');
+
+    try {
+      const preparedFile = await prepareAvatarFile(file);
+      const response = await profileApi.uploadAvatar(preparedFile);
+
+      setAccount(response.data.user);
+      updateUser(response.data.user);
+      setAvatarNotice('Profile picture updated.');
+    } catch (err) {
+      setAvatarError(err.message || 'Unable to update your profile picture.');
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!account?.avatar) return;
+
+    setAvatarBusy(true);
+    setAvatarError('');
+    setAvatarNotice('');
+
+    try {
+      const response = await profileApi.removeAvatar();
+
+      setAccount(response.data.user);
+      updateUser(response.data.user);
+      setAvatarNotice('Profile picture removed.');
+    } catch (err) {
+      setAvatarError(err.message || 'Unable to remove your profile picture.');
+    } finally {
+      setAvatarBusy(false);
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -96,6 +175,21 @@ function Profile() {
       setError(err.message || 'Unable to save your profile.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleReview = async () => {
+    setReviewLoading(true);
+    setReviewError('');
+
+    try {
+      const response = await aiApi.profileReview();
+      setReview(response.data.review);
+      setReviewGeneratedAt(response.data.generated_at);
+    } catch (err) {
+      setReviewError(err.message || 'Unable to review your profile right now.');
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -141,6 +235,75 @@ function Profile() {
         <div className="profile__grid">
           <form className="card profile__form" onSubmit={handleSubmit} noValidate>
             <h2>Personal details</h2>
+
+            <div className="profile__avatar-row">
+              <div className="profile__avatar-preview">
+                {account?.avatar ? (
+                  <img src={account.avatar} alt={account.name} />
+                ) : (
+                  <span aria-hidden="true">{getInitials(account)}</span>
+                )}
+              </div>
+
+              <div className="profile__avatar-copy">
+                <h3>Profile picture</h3>
+                <p>
+                  Add a photo so your workspace feels like yours. JPEG, PNG, or
+                  WebP up to 10 MB; we crop it square and compress it before
+                  saving.
+                </p>
+
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="profile__avatar-input"
+                  onChange={handleAvatarChange}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
+
+                <div className="profile__avatar-actions">
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={avatarBusy}
+                  >
+                    <Camera size={16} aria-hidden="true" />
+                    {avatarBusy
+                      ? 'Updating...'
+                      : account?.avatar
+                      ? 'Change picture'
+                      : 'Add picture'}
+                  </button>
+
+                  {account?.avatar && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={handleAvatarRemove}
+                      disabled={avatarBusy}
+                    >
+                      <Trash2 size={16} aria-hidden="true" />
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                {avatarError && (
+                  <p className="form-error" role="alert">
+                    {avatarError}
+                  </p>
+                )}
+
+                {avatarNotice && (
+                  <p className="profile__avatar-notice" role="status">
+                    {avatarNotice}
+                  </p>
+                )}
+              </div>
+            </div>
 
             {error && (
               <div className="alert alert-error" role="alert">
@@ -312,6 +475,125 @@ function Profile() {
             </p>
           </aside>
         </div>
+
+        <section className="card profile__review">
+          <div className="profile__review-head">
+            <div>
+              <h2>
+                <Sparkles size={19} /> AI profile review
+              </h2>
+              <p>
+                Get honest feedback on your profile and suggested wording. Save
+                your latest edits above before generating a review.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={handleReview}
+              disabled={reviewLoading}
+            >
+              <Sparkles size={16} />
+              {reviewLoading
+                ? 'Reviewing...'
+                : review
+                ? 'Review again'
+                : 'Review my profile'}
+            </button>
+          </div>
+
+          {reviewError && (
+            <div className="alert alert-error" role="alert">
+              {reviewError}
+            </div>
+          )}
+
+          {reviewLoading && !review && (
+            <div
+              className="spinner profile__review-spinner"
+              role="status"
+              aria-label="Reviewing your profile"
+            />
+          )}
+
+          {!reviewLoading && !review && !reviewError && (
+            <p className="profile__review-empty">
+              No review yet. Generate one to see what already stands out and
+              what to improve.
+            </p>
+          )}
+
+          {review && (
+            <div className="profile__review-body">
+              <div className="profile__review-score">
+                <strong>{review.completeness_score ?? '—'}</strong>
+                <span>out of 100 completeness</span>
+                {reviewGeneratedAt && (
+                  <small>
+                    Generated{' '}
+                    {new Date(reviewGeneratedAt).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </small>
+                )}
+              </div>
+
+              <div className="profile__review-main">
+                {review.summary && <p>{review.summary}</p>}
+
+                {review.strengths?.length > 0 && (
+                  <div className="profile__review-section">
+                    <h3>What stands out</h3>
+                    <ul>
+                      {review.strengths.map((item, index) => (
+                        <li key={`strength-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {review.improvements?.length > 0 && (
+                  <div className="profile__review-section">
+                    <h3>What to improve</h3>
+                    <ul>
+                      {review.improvements.map((item) => (
+                        <li key={`${item.area}-${item.priority}`}>
+                          <strong>{item.area}</strong>
+                          <span>{item.recommendation}</span>
+                          <span
+                            className={`profile__priority profile__priority--${item.priority}`}
+                          >
+                            {item.priority}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {review.suggested_headline && (
+                  <div className="profile__review-section">
+                    <h3>Suggested headline</h3>
+                    <p className="profile__review-suggestion">
+                      {review.suggested_headline}
+                    </p>
+                  </div>
+                )}
+
+                {review.suggested_about && (
+                  <div className="profile__review-section">
+                    <h3>Suggested about section</h3>
+                    <p className="profile__review-suggestion">
+                      {review.suggested_about}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </section>
   );

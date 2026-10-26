@@ -1,15 +1,14 @@
-import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { LogOut, Menu, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
-// Main navigation bar. It changes its account links depending on whether
-// somebody is logged in. It uses a hamburger menu on small screens.
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -21,6 +20,21 @@ function Navbar() {
 
   const linkClass = ({ isActive }) =>
     isActive ? 'navbar__link navbar__link--active' : 'navbar__link';
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [menuOpen]);
 
   return (
     <header className="navbar">
@@ -37,16 +51,24 @@ function Navbar() {
         </Link>
 
         <button
+          type="button"
           className="navbar__toggle"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle navigation menu"
+          onClick={() => setMenuOpen((current) => !current)}
+          aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={menuOpen}
+          aria-controls="public-navigation"
         >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          {menuOpen ? (
+            <X size={24} aria-hidden="true" />
+          ) : (
+            <Menu size={24} aria-hidden="true" />
+          )}
         </button>
 
         <nav
+          id="public-navigation"
           className={`navbar__menu ${menuOpen ? 'navbar__menu--open' : ''}`}
+          aria-label="Main navigation"
         >
           <NavLink to="/" className={linkClass} onClick={closeMenu} end>
             Home
@@ -64,25 +86,23 @@ function Navbar() {
 
           {!loading && user && (
             <>
-              <NavLink to="/goals" className={linkClass} onClick={closeMenu}>
-                Goals
-              </NavLink>
-              <NavLink to="/roadmaps" className={linkClass} onClick={closeMenu}>
-                Roadmaps
-              </NavLink>
-              <NavLink to="/skills" className={linkClass} onClick={closeMenu}>
-                My Skills
-              </NavLink>
-              <NavLink to="/profile" className={linkClass} onClick={closeMenu}>
-                Profile
-              </NavLink>
-              <span className="navbar__user">Hi, {user.name.split(' ')[0]}</span>
+              <Link
+                to="/profile"
+                className="btn btn-primary btn-sm navbar__workspace"
+                onClick={closeMenu}
+              >
+                <LayoutDashboard size={16} aria-hidden="true" />
+                My workspace
+              </Link>
+              <span className="navbar__user">
+                {user.name.split(' ')[0]}
+              </span>
               <button
                 type="button"
                 className="navbar__logout"
                 onClick={handleLogout}
               >
-                <LogOut size={16} /> Log out
+                <LogOut size={16} aria-hidden="true" /> Log out
               </button>
             </>
           )}
@@ -94,10 +114,10 @@ function Navbar() {
               </NavLink>
               <Link
                 to="/register"
-                className="btn btn-primary navbar__cta"
+                className="btn btn-primary btn-sm navbar__cta"
                 onClick={closeMenu}
               >
-                Get Started
+                Get started
               </Link>
             </>
           )}

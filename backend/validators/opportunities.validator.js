@@ -19,7 +19,6 @@ const listOpportunitiesQuery = paginationQuery.extend({
   location: optionalText(150),
   is_remote: booleanFromQuery(),
   is_active: booleanFromQuery(true),
-  include_demo: booleanFromQuery(true),
   sort: z.enum(SORT_OPTIONS).default('newest'),
   order: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -45,7 +44,7 @@ const opportunityFields = {
   application_deadline: dateField().optional(),
   application_url: urlField(500).optional(),
   source_name: optionalText(150),
-  is_demo: z.boolean().optional(),
+  external_id: optionalText(200),
   is_active: z.boolean().optional(),
 };
 

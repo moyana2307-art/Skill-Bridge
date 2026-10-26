@@ -1,10 +1,13 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Opportunities from './Opportunities';
-import { opportunitiesApi } from '../api/client';
+import { aiApi, opportunitiesApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 jest.mock('../api/client', () => ({
+  aiApi: {
+    opportunityInsight: jest.fn(),
+  },
   opportunitiesApi: {
     list: jest.fn(),
     get: jest.fn(),
@@ -33,8 +36,7 @@ const job = {
   eligibility: null,
   application_deadline: null,
   application_url: 'https://example.com/jobs/1',
-  source_name: 'Demo board',
-  is_demo: true,
+  source_name: 'ReliefWeb',
   is_active: true,
 };
 
@@ -70,7 +72,7 @@ test('shows the public opportunity directory to logged-out visitors', async () =
   ).toBeInTheDocument();
   expect(screen.getByText('Acme Studio')).toBeInTheDocument();
   expect(screen.getByText(/remote · berlin/i)).toBeInTheDocument();
-  expect(screen.getByText('Demo')).toBeInTheDocument();
+  expect(screen.queryByText('Demo')).not.toBeInTheDocument();
   expect(screen.getByText(/apply via source/i)).toHaveAttribute(
     'href',
     'https://example.com/jobs/1'
@@ -170,4 +172,37 @@ test('shows saved opportunities and allows removing them', async () => {
     expect(opportunitiesApi.unsave).toHaveBeenCalledWith(1);
   });
   expect(await screen.findByText(/nothing saved yet/i)).toBeInTheDocument();
+});
+
+test('shows an AI insight for a logged-in user', async () => {
+  aiApi.opportunityInsight.mockResolvedValue({
+    data: {
+      opportunity: job,
+      insight: {
+        fit_level: 'strong',
+        summary: 'Your React and CSS skills line up well with this role.',
+        strengths: ['Hands-on React experience'],
+        gaps: ['No professional Git workflow mentioned'],
+        application_tips: ['Show a deployed React project'],
+        questions_to_prepare: ['How is code review handled?'],
+      },
+    },
+  });
+
+  renderOpportunities();
+
+  fireEvent.click(
+    await screen.findByRole('button', { name: /why this fits/i })
+  );
+
+  await waitFor(() => {
+    expect(aiApi.opportunityInsight).toHaveBeenCalledWith({
+      opportunity_id: 1,
+    });
+  });
+  expect(await screen.findByText(/strong fit/i)).toBeInTheDocument();
+  expect(
+    screen.getByText(/your react and css skills line up well/i)
+  ).toBeInTheDocument();
+  expect(screen.getByText('Hands-on React experience')).toBeInTheDocument();
 });

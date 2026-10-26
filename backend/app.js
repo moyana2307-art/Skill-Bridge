@@ -17,11 +17,19 @@ app.disable('x-powered-by');
 // Behind a hosting proxy, trust its forwarded protocol so secure cookies work.
 if (env.nodeEnv === 'production') app.set('trust proxy', 1);
 
-// CORS: allow the React dev server (port 3000) to call this API.
-// Without this, the browser would block the requests for security.
+// CORS: allow the configured frontend origin(s) to call this API.
+// CLIENT_URL may contain several comma-separated origins, which is useful for
+// production plus Vercel preview deployments. Requests with no Origin header
+// (curl, health checks) are allowed.
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin(origin, callback) {
+      if (!origin || env.clientUrls.includes(origin.replace(/\/$/, ''))) {
+        return callback(null, true);
+      }
+
+      return callback(new Error('Origin is not allowed by CORS'));
+    },
     credentials: true,
   })
 );
@@ -54,6 +62,8 @@ app.get('/', (req, res) => {
         'GET    /api/auth/me',
         'GET    /api/profile',
         'PATCH  /api/profile',
+        'POST   /api/profile/avatar',
+        'DELETE /api/profile/avatar',
         'GET    /api/profile/skills',
         'POST   /api/profile/skills',
         'PATCH  /api/profile/skills/:skillId',
@@ -85,6 +95,13 @@ app.get('/', (req, res) => {
         'POST   /api/opportunities (admin)',
         'PATCH  /api/opportunities/:id (admin)',
         'DELETE /api/opportunities/:id (admin)',
+        'POST   /api/opportunities/sync (admin)',
+        'POST   /api/ai/skills-gap',
+        'GET    /api/ai/skills-gap/latest',
+        'POST   /api/ai/roadmaps',
+        'POST   /api/ai/opportunity-insight',
+        'POST   /api/ai/profile-review',
+        'GET    /api/ai/profile-review/latest',
         ...(env.nodeEnv !== 'production'
           ? ['GET    /api/test', 'POST   /api/test/echo']
           : []),

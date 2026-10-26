@@ -6,10 +6,11 @@ import {
   Map,
   Pencil,
   Plus,
+  Sparkles,
   Trash2,
   X,
 } from 'lucide-react';
-import { careerGoalsApi, roadmapsApi } from '../api/client';
+import { aiApi, careerGoalsApi, roadmapsApi } from '../api/client';
 import './Roadmaps.css';
 
 const ROADMAP_STATUSES = ['active', 'completed', 'archived'];
@@ -24,6 +25,12 @@ const EMPTY_TASK_FORM = {
   description: '',
   skills_to_develop: '',
   estimated_duration: '',
+};
+const EMPTY_AI_FORM = {
+  career_goal_id: '',
+  timeframe_weeks: 12,
+  hours_per_week: 8,
+  focus: '',
 };
 
 function formatStatus(value) {
@@ -48,6 +55,8 @@ function Roadmaps() {
 
   const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
   const [creating, setCreating] = useState(false);
+  const [aiForm, setAiForm] = useState(EMPTY_AI_FORM);
+  const [generating, setGenerating] = useState(false);
   const [editForm, setEditForm] = useState(null);
   const [savingRoadmap, setSavingRoadmap] = useState(false);
   const [addingTask, setAddingTask] = useState(false);
@@ -207,6 +216,49 @@ function Roadmaps() {
       setActionError(err.message || 'Unable to create that roadmap.');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleAiChange = (event) => {
+    const { name, value } = event.target;
+    setAiForm((current) => ({ ...current, [name]: value }));
+    setActionError('');
+    setSuccess('');
+  };
+
+  const handleGenerateRoadmap = async (event) => {
+    event.preventDefault();
+
+    if (!aiForm.career_goal_id) {
+      setActionError('Choose a career goal before generating a roadmap.');
+      return;
+    }
+
+    setGenerating(true);
+    setActionError('');
+    setSuccess('');
+
+    try {
+      const response = await aiApi.generateRoadmap({
+        career_goal_id: Number(aiForm.career_goal_id),
+        timeframe_weeks: Number(aiForm.timeframe_weeks),
+        hours_per_week: Number(aiForm.hours_per_week),
+        focus: aiForm.focus || undefined,
+      });
+      const newRoadmap = response.data.roadmap;
+
+      setAiForm((current) => ({ ...current, focus: '' }));
+      setSearchParams({});
+      setSuccess(
+        `${newRoadmap.title} created with ${response.data.generated_tasks} AI-generated tasks. Review and adjust them as needed.`
+      );
+      await loadRoadmaps({ selectId: newRoadmap.id });
+    } catch (err) {
+      setActionError(
+        err.message || 'Unable to generate a roadmap right now.'
+      );
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -414,6 +466,110 @@ function Roadmaps() {
               {actionError}
             </div>
           )}
+
+          <form className="card roadmaps__ai" onSubmit={handleGenerateRoadmap}>
+            <div className="roadmaps__create-heading">
+              <div>
+                <h2>
+                  <Sparkles size={19} /> Generate a roadmap with AI
+                </h2>
+                <p>
+                  Uses your profile, skills, and chosen goal to draft a
+                  week-by-week plan. You can edit every task afterwards.
+                </p>
+              </div>
+            </div>
+
+            {goals.length === 0 ? (
+              <p className="roadmaps__hint">
+                <Link to="/goals">Create a career goal</Link> first, then come
+                back to generate a roadmap.
+              </p>
+            ) : (
+              <>
+                <div className="roadmaps__ai-grid">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="ai-goal">
+                      Career goal
+                    </label>
+                    <select
+                      id="ai-goal"
+                      name="career_goal_id"
+                      className="form-select"
+                      value={aiForm.career_goal_id}
+                      onChange={handleAiChange}
+                      required
+                    >
+                      <option value="">Choose a goal</option>
+                      {goals.map((goal) => (
+                        <option value={goal.id} key={goal.id}>
+                          {goal.career_title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="ai-weeks">
+                      Timeframe (weeks)
+                    </label>
+                    <input
+                      id="ai-weeks"
+                      name="timeframe_weeks"
+                      type="number"
+                      className="form-input"
+                      min="4"
+                      max="52"
+                      value={aiForm.timeframe_weeks}
+                      onChange={handleAiChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="ai-hours">
+                      Hours per week
+                    </label>
+                    <input
+                      id="ai-hours"
+                      name="hours_per_week"
+                      type="number"
+                      className="form-input"
+                      min="1"
+                      max="40"
+                      value={aiForm.hours_per_week}
+                      onChange={handleAiChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group roadmaps__ai-focus">
+                    <label className="form-label" htmlFor="ai-focus">
+                      Focus (optional)
+                    </label>
+                    <input
+                      id="ai-focus"
+                      name="focus"
+                      className="form-input"
+                      placeholder="e.g. portfolio projects and interview practice"
+                      value={aiForm.focus}
+                      onChange={handleAiChange}
+                      maxLength={300}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary roadmaps__create-button"
+                  disabled={generating}
+                >
+                  <Sparkles size={17} />
+                  {generating ? 'Generating...' : 'Generate roadmap'}
+                </button>
+              </>
+            )}
+          </form>
 
           <form className="card roadmaps__create" onSubmit={handleCreateRoadmap}>
             <div className="roadmaps__create-heading">

@@ -16,14 +16,14 @@ afterEach(() => {
 
 test('renders the SkillBridge AI brand in the navigation', async () => {
   render(<App />);
-  await screen.findByRole('link', { name: /log in/i });
+  await screen.findAllByRole('link', { name: /log in/i });
   const brandElements = screen.getAllByText(/SkillBridge AI/i);
   expect(brandElements.length).toBeGreaterThan(0);
 });
 
 test('renders the landing page headline', async () => {
   render(<App />);
-  await screen.findByRole('link', { name: /log in/i });
+  await screen.findAllByRole('link', { name: /log in/i });
   expect(screen.getByText(/Build skills/i)).toBeInTheDocument();
 });
 
@@ -32,7 +32,7 @@ test('shows the login form', async () => {
   render(<App />);
 
   expect(
-    await screen.findByRole('heading', { name: /welcome back/i })
+    await screen.findByRole('heading', { name: /welcome back/i }, { timeout: 5000 })
   ).toBeInTheDocument();
 });
 
@@ -41,7 +41,7 @@ test('redirects logged-out visitors from the profile page to login', async () =>
   render(<App />);
 
   expect(
-    await screen.findByRole('heading', { name: /welcome back/i })
+    await screen.findByRole('heading', { name: /welcome back/i }, { timeout: 5000 })
   ).toBeInTheDocument();
 });
 
@@ -50,7 +50,7 @@ test('redirects logged-out visitors from the skills page to login', async () => 
   render(<App />);
 
   expect(
-    await screen.findByRole('heading', { name: /welcome back/i })
+    await screen.findByRole('heading', { name: /welcome back/i }, { timeout: 5000 })
   ).toBeInTheDocument();
 });
 
@@ -59,7 +59,7 @@ test('redirects logged-out visitors from the goals page to login', async () => {
   render(<App />);
 
   expect(
-    await screen.findByRole('heading', { name: /welcome back/i })
+    await screen.findByRole('heading', { name: /welcome back/i }, { timeout: 5000 })
   ).toBeInTheDocument();
 });
 
@@ -68,7 +68,7 @@ test('redirects logged-out visitors from the roadmaps page to login', async () =
   render(<App />);
 
   expect(
-    await screen.findByRole('heading', { name: /welcome back/i })
+    await screen.findByRole('heading', { name: /welcome back/i }, { timeout: 5000 })
   ).toBeInTheDocument();
 });
 

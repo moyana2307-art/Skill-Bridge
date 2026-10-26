@@ -1,7 +1,6 @@
 .footer {
   background-color: var(--color-primary);
-  color: #cbd5e1;
-  margin-top: 48px;
+  color: #edf2f7;
 }
 
 .footer__grid {
@@ -36,14 +35,14 @@
 }
 
 .footer__about p {
-  color: #cbd5e1;
+  color: #edf2f7;
   font-size: 0.95rem;
   margin-bottom: 12px;
 }
 
 .footer__disclaimer {
   font-size: 0.8rem !important;
-  color: #94a3b8 !important;
+  color: #cbd5e1 !important;
 }
 
 .footer__column h4 {
@@ -54,7 +53,7 @@
 
 .footer__column a {
   display: block;
-  color: #cbd5e1;
+  color: #edf2f7;
   font-size: 0.95rem;
   margin-bottom: 10px;
   transition: color 0.2s ease;
@@ -68,7 +67,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   padding: 18px 20px;
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: #cbd5e1;
   text-align: center;
 }
 

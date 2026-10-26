@@ -16,6 +16,12 @@ const pool = mysql.createPool({
   queueLimit: 0, // no limit on queued requests
   charset: 'utf8mb4_unicode_ci',
   namedPlaceholders: true,
+  // Managed MySQL providers usually require TLS. DB_SSL_REJECT_UNAUTHORIZED
+  // can be set to false only if the provider's certificate is not trusted by
+  // the host; prefer keeping it true.
+  ssl: env.db.ssl
+    ? { rejectUnauthorized: env.db.sslRejectUnauthorized }
+    : undefined,
   // DATE columns are returned as 'YYYY-MM-DD' strings so a deadline never
   // shifts a day because of the machine's time zone.
   dateStrings: ['DATE'],

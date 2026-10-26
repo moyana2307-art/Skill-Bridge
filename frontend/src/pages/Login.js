@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
-import { LogIn } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import AuthShell from '../components/AuthShell';
 import { useAuth } from '../context/AuthContext';
-import './Auth.css';
 
 function Login() {
   const { user, login } = useAuth();
@@ -13,9 +13,8 @@ function Login() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // After a successful login the auth context updates `user`, and this
-  // redirect sends the person to the page they originally wanted.
   if (user) {
     return <Navigate to={from} replace />;
   }
@@ -51,77 +50,101 @@ function Login() {
   };
 
   return (
-    <section className="auth">
-      <div className="container">
-        <div className="card auth__card">
-          <div className="auth__header">
-            <div className="auth__icon">
-              <LogIn size={24} />
-            </div>
-            <h1>Welcome back</h1>
-            <p>Log in to continue building your career plan.</p>
-          </div>
-
-          {error && (
-            <div className="alert alert-error" role="alert">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="form-group">
-              <label className="form-label" htmlFor="email">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                className="form-input"
-                value={form.email}
-                onChange={handleChange}
-                autoComplete="email"
-                maxLength={255}
-                required
-              />
-              {fieldErrors.email && <p className="form-error">{fieldErrors.email}</p>}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                className="form-input"
-                value={form.password}
-                onChange={handleChange}
-                autoComplete="current-password"
-                maxLength={72}
-                required
-              />
-              {fieldErrors.password && (
-                <p className="form-error">{fieldErrors.password}</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary btn-block"
-              disabled={submitting}
-            >
-              {submitting ? 'Logging in...' : 'Log in'}
-            </button>
-          </form>
-
-          <p className="auth__footer">
-            New to SkillBridge AI? <Link to="/register">Create an account</Link>
-          </p>
+    <AuthShell
+      variant="login"
+      title="Welcome back"
+      description="Log in to continue building your career plan, roadmap, and opportunities."
+      footer={
+        <>
+          New to SkillBridge AI? <Link to="/register">Create an account</Link>
+        </>
+      }
+    >
+      {error && (
+        <div className="alert alert-error" role="alert">
+          {error}
         </div>
-      </div>
-    </section>
+      )}
+
+      <form onSubmit={handleSubmit} noValidate aria-busy={submitting}>
+        <div className="form-group">
+          <label className="form-label" htmlFor="email">
+            Email address
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            className="form-input"
+            value={form.email}
+            onChange={handleChange}
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="you@example.com"
+            maxLength={255}
+            aria-invalid={fieldErrors.email ? 'true' : 'false'}
+            aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
+            required
+          />
+          {fieldErrors.email && (
+            <p className="form-error" id="login-email-error">
+              {fieldErrors.email}
+            </p>
+          )}
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" htmlFor="password">
+            Password
+          </label>
+          <div className="auth-field">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              className="form-input"
+              value={form.password}
+              onChange={handleChange}
+              autoComplete="current-password"
+              maxLength={72}
+              aria-invalid={fieldErrors.password ? 'true' : 'false'}
+              aria-describedby={
+                fieldErrors.password ? 'login-password-error' : undefined
+              }
+              required
+            />
+            <button
+              type="button"
+              className="auth-field__toggle"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+              aria-controls="password"
+            >
+              {showPassword ? (
+                <EyeOff size={18} aria-hidden="true" />
+              ) : (
+                <Eye size={18} aria-hidden="true" />
+              )}
+            </button>
+          </div>
+          {fieldErrors.password && (
+            <p className="form-error" id="login-password-error">
+              {fieldErrors.password}
+            </p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          className="btn btn-primary btn-lg btn-block auth__submit"
+          disabled={submitting}
+        >
+          {submitting ? 'Logging in...' : 'Log in'}
+        </button>
+      </form>
+    </AuthShell>
   );
 }
 

@@ -13,33 +13,60 @@ export class ApiError extends Error {
   }
 }
 
+const NETWORK_RETRY_DELAYS_MS = [400, 900, 1500];
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function readPayload(response) {
+  try {
+    return await response.json();
+  } catch (err) {
+    return null;
+  }
+}
+
 async function apiRequest(path, { method = 'GET', body } = {}) {
-  let response;
+  const maxAttempts = method === 'GET' ? NETWORK_RETRY_DELAYS_MS.length + 1 : 1;
+  const isFormData =
+    typeof FormData !== 'undefined' && body instanceof FormData;
+  let response = null;
 
-  try {
-    response = await fetch(`${API_URL}${path}`, {
-      method,
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-  } catch (err) {
-    throw new ApiError(
-      'Cannot reach the server. Make sure the backend is running.',
-      0,
-      'NETWORK_ERROR'
-    );
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      response = await fetch(`${API_URL}${path}`, {
+        method,
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          ...(body !== undefined && !isFormData
+            ? { 'Content-Type': 'application/json' }
+            : {}),
+        },
+        body:
+          body === undefined
+            ? undefined
+            : isFormData
+            ? body
+            : JSON.stringify(body),
+      });
+      break;
+    } catch (err) {
+      if (attempt < maxAttempts - 1) {
+        await wait(NETWORK_RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+
+      throw new ApiError(
+        'Cannot reach the server. Double-click "start-skillbridge.cmd" in the project root, or run "npm run dev" there.',
+        0,
+        'NETWORK_ERROR'
+      );
+    }
   }
 
-  let payload = null;
-  try {
-    payload = await response.json();
-  } catch (err) {
-    payload = null;
-  }
+  const payload = await readPayload(response);
 
   if (!response.ok || payload?.success === false) {
     const error = payload?.error || {};
@@ -82,6 +109,14 @@ export const metaApi = {
 export const profileApi = {
   get: () => apiRequest('/profile'),
   update: (data) => apiRequest('/profile', { method: 'PATCH', body: data }),
+  uploadAvatar: (file) => {
+    const body = new FormData();
+    body.append('avatar', file);
+
+    return apiRequest('/profile/avatar', { method: 'POST', body });
+  },
+  removeAvatar: () =>
+    apiRequest('/profile/avatar', { method: 'DELETE' }),
 };
 
 export const skillsApi = {
@@ -151,6 +186,19 @@ export const roadmapsApi = {
       )}`,
       { method: 'DELETE' }
     ),
+};
+
+export const aiApi = {
+  skillsGap: (data) =>
+    apiRequest('/ai/skills-gap', { method: 'POST', body: data }),
+  latestSkillsGap: () => apiRequest('/ai/skills-gap/latest'),
+  generateRoadmap: (data) =>
+    apiRequest('/ai/roadmaps', { method: 'POST', body: data }),
+  opportunityInsight: (data) =>
+    apiRequest('/ai/opportunity-insight', { method: 'POST', body: data }),
+  profileReview: () =>
+    apiRequest('/ai/profile-review', { method: 'POST' }),
+  latestProfileReview: () => apiRequest('/ai/profile-review/latest'),
 };
 
 export const opportunitiesApi = {

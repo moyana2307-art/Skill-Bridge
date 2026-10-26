@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import PublicLayout from './layouts/PublicLayout';
+import AppLayout from './layouts/AppLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import Home from './pages/Home';
@@ -10,6 +11,7 @@ import Profile from './pages/Profile';
 import MySkills from './pages/MySkills';
 import CareerGoals from './pages/CareerGoals';
 import Roadmaps from './pages/Roadmaps';
+import Analysis from './pages/Analysis';
 import Opportunities from './pages/Opportunities';
 import PlaceholderPage from './pages/PlaceholderPage';
 
@@ -28,38 +30,6 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/skills"
-              element={
-                <ProtectedRoute>
-                  <MySkills />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/goals"
-              element={
-                <ProtectedRoute>
-                  <CareerGoals />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/roadmaps"
-              element={
-                <ProtectedRoute>
-                  <Roadmaps />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="*"
               element={
                 <PlaceholderPage
@@ -68,6 +38,20 @@ function App() {
                 />
               }
             />
+          </Route>
+
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/skills" element={<MySkills />} />
+            <Route path="/goals" element={<CareerGoals />} />
+            <Route path="/roadmaps" element={<Roadmaps />} />
+            <Route path="/analysis" element={<Analysis />} />
           </Route>
         </Routes>
       </BrowserRouter>

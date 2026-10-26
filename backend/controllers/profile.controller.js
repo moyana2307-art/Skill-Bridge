@@ -3,6 +3,7 @@
 const profileService = require('../services/profile.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
+const { detectImageMime } = require('../utils/image');
 
 // GET /api/profile
 async function get(req, res) {
@@ -20,4 +21,32 @@ async function update(req, res) {
   return sendSuccess(res, { data, message: 'Profile updated' });
 }
 
-module.exports = { get, update };
+// POST /api/profile/avatar
+async function uploadAvatar(req, res) {
+  if (!req.file) {
+    throw ApiError.badRequest('Choose a profile picture to upload.');
+  }
+
+  const avatarMime = detectImageMime(req.file.buffer);
+
+  if (!avatarMime) {
+    throw ApiError.badRequest('Profile pictures must be a JPEG, PNG, or WebP image.');
+  }
+
+  const data = await profileService.updateAvatar(
+    req.user.id,
+    req.file.buffer,
+    avatarMime
+  );
+
+  return sendSuccess(res, { data, message: 'Profile picture updated' });
+}
+
+// DELETE /api/profile/avatar
+async function removeAvatar(req, res) {
+  const data = await profileService.removeAvatar(req.user.id);
+
+  return sendSuccess(res, { data, message: 'Profile picture removed' });
+}
+
+module.exports = { get, update, uploadAvatar, removeAvatar };

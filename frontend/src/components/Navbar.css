@@ -1,25 +1,31 @@
 .navbar {
-  background-color: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 100;
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .navbar__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 68px;
-  gap: 16px;
+  min-height: 72px;
+  gap: 18px;
 }
 
 .navbar__brand {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 10px;
-  font-size: 1.25rem;
+  color: var(--color-primary);
+  font-size: 1.22rem;
   font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.navbar__brand:hover {
   color: var(--color-primary);
 }
 
@@ -27,46 +33,58 @@
   width: 38px;
   height: 38px;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 9px;
 }
 
 .navbar__brand-accent {
-  color: var(--color-accent);
+  color: var(--color-primary-light);
+  font-weight: 800;
 }
 
 .navbar__menu {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .navbar__link {
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
+  padding: 9px 13px;
+  border-radius: 8px;
   color: var(--color-text-light);
-  font-weight: 600;
   font-size: 0.9rem;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  font-weight: 600;
+  transition: color 0.18s ease, background-color 0.18s ease;
 }
 
 .navbar__link:hover {
   color: var(--color-primary);
-  background-color: var(--color-bg);
+  background-color: var(--color-section);
 }
 
 .navbar__link--active {
   color: var(--color-accent-dark);
+  background-color: var(--color-accent-soft);
+}
+
+.navbar__link:focus-visible,
+.navbar__logout:focus-visible,
+.navbar__toggle:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.navbar__workspace {
+  margin-left: 8px;
 }
 
 .navbar__cta {
-  padding: 9px 20px;
   margin-left: 8px;
 }
 
 .navbar__user {
   padding: 8px 4px 8px 12px;
   color: var(--color-primary);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -75,56 +93,69 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: none;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background-color: var(--color-white);
   color: var(--color-text-light);
-  font: inherit;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .navbar__logout:hover {
+  border-color: var(--color-error);
   color: var(--color-error);
   background-color: var(--color-error-soft);
 }
 
-.navbar__logout:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
 .navbar__toggle {
   display: none;
-  background: none;
-  border: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background-color: var(--color-white);
   color: var(--color-primary);
   cursor: pointer;
-  padding: 8px;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-/* Stack the menu vertically behind a hamburger button when space is tight. */
+.navbar__toggle:hover {
+  border-color: var(--color-secondary);
+  background-color: var(--color-primary-lighter);
+  box-shadow: 0 4px 10px rgba(16, 54, 125, 0.08);
+}
+
 @media (max-width: 1024px) {
+  .navbar__inner {
+    min-height: 66px;
+  }
+
   .navbar__toggle {
-    display: block;
+    display: inline-flex;
   }
 
   .navbar__menu {
     display: none;
     position: absolute;
-    top: 68px;
+    top: 66px;
     left: 0;
     right: 0;
-    background-color: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    max-height: calc(100vh - 66px);
+    overflow-y: auto;
     flex-direction: column;
     align-items: stretch;
-    padding: 16px 20px 20px;
-    gap: 6px;
-    box-shadow: var(--shadow-md);
+    gap: 5px;
+    padding: 16px 20px 22px;
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-lg);
   }
 
   .navbar__menu--open {
@@ -135,16 +166,18 @@
     padding: 12px 14px;
   }
 
+  .navbar__workspace,
   .navbar__cta {
-    margin-left: 0;
-    margin-top: 8px;
+    width: 100%;
+    margin: 8px 0 0;
   }
 
   .navbar__user {
-    padding: 8px 14px;
+    padding: 10px 14px 2px;
   }
 
   .navbar__logout {
+    justify-content: flex-start;
     padding: 12px 14px;
   }
 }

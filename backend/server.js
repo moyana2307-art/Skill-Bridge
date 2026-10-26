@@ -5,6 +5,7 @@
 const app = require('./app');
 const { env, assertDatabaseConfigured, assertAuthConfigured } = require('./config/env');
 const { pool } = require('./config/db');
+const { syncOpportunities } = require('./services/opportunitySync.service');
 
 // Fail fast with a clear message if the database is not configured.
 try {
@@ -18,7 +19,36 @@ try {
 const server = app.listen(env.port, () => {
   console.log(`SkillBridge AI backend running on http://localhost:${env.port} (${env.nodeEnv})`);
   console.log(`Health check: http://localhost:${env.port}/api/health`);
+
+  if (env.opportunitySync.enabled) {
+    startOpportunitySync();
+  }
 });
+
+// Refresh real listings shortly after boot and then on an interval. The first
+// run waits a few seconds so the server can answer health checks immediately.
+function startOpportunitySync() {
+  const run = () => {
+    syncOpportunities()
+      .then((result) => {
+        console.log(
+          `[sync] ${result.total_saved} opportunities refreshed from ${result.sources
+            .map((source) => source.name)
+            .join(', ')}`
+        );
+
+        if (result.errors.length) {
+          console.warn('[sync] partial failure:', result.errors);
+        }
+      })
+      .catch((err) => {
+        console.error('[sync] opportunity sync failed:', err.message);
+      });
+  };
+
+  setTimeout(run, 5000).unref();
+  setInterval(run, env.opportunitySync.intervalHours * 60 * 60 * 1000).unref();
+}
 
 // Close the database pool and stop the server when the process is stopped,
 // so nothing is left half-open.

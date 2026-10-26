@@ -37,6 +37,13 @@ router.get(
   asyncHandler(opportunitiesController.matches)
 );
 router.get('/saved', requireAuth, asyncHandler(opportunitiesController.saved));
+// Admin-only: pull fresh listings from the configured public APIs.
+router.post(
+  '/sync',
+  requireAuth,
+  requireRole('admin'),
+  asyncHandler(opportunitiesController.sync)
+);
 router.post(
   '/:id/save',
   requireAuth,

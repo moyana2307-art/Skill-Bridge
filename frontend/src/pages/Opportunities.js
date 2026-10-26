@@ -21,7 +21,7 @@ import {
   Wifi,
   X,
 } from 'lucide-react';
-import { opportunitiesApi } from '../api/client';
+import { aiApi, opportunitiesApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import './Opportunities.css';
 
@@ -132,7 +132,16 @@ function getSortParams(sort) {
   return { sort: 'newest', order: 'desc' };
 }
 
-function OpportunityCard({ opportunity, saved, saving, onToggleSave, user, matchView }) {
+function OpportunityCard({
+  opportunity,
+  saved,
+  saving,
+  onToggleSave,
+  onInsight,
+  insightLoading,
+  user,
+  matchView,
+}) {
   const type = TYPE_META[opportunity.opportunity_type] || {
     label: formatLabel(opportunity.opportunity_type) || 'Opportunity',
     Icon: Briefcase,
@@ -158,15 +167,6 @@ function OpportunityCard({ opportunity, saved, saving, onToggleSave, user, match
             <TypeIcon size={15} />
             {type.label}
           </span>
-
-          {opportunity.is_demo && (
-            <span
-              className="opportunities__demo-badge"
-              title="Sample listing for testing the platform"
-            >
-              Demo
-            </span>
-          )}
         </div>
 
         <div className="opportunities__card-actions">
@@ -289,23 +289,54 @@ function OpportunityCard({ opportunity, saved, saving, onToggleSave, user, match
             : 'SkillBridge AI listing'}
         </span>
 
-        {opportunity.application_url ? (
-          <a
-            className="opportunities__apply"
-            href={opportunity.application_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Apply via source for ${opportunity.title}`}
-          >
-            Apply via source <ExternalLink size={15} />
-          </a>
-        ) : (
-          <span className="opportunities__apply opportunities__apply--muted">
-            No application link
-          </span>
-        )}
+        <div className="opportunities__footer-actions">
+          {user && (
+            <button
+              type="button"
+              className="opportunities__insight-btn"
+              onClick={() => onInsight(opportunity)}
+              disabled={insightLoading}
+            >
+              <Sparkles size={15} />
+              {insightLoading ? 'Thinking...' : 'Why this fits'}
+            </button>
+          )}
+
+          {opportunity.application_url ? (
+            <a
+              className="opportunities__apply"
+              href={opportunity.application_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Apply via source for ${opportunity.title}`}
+            >
+              Apply via source <ExternalLink size={15} />
+            </a>
+          ) : (
+            <span className="opportunities__apply opportunities__apply--muted">
+              No application link
+            </span>
+          )}
+        </div>
       </div>
     </article>
+  );
+}
+
+function InsightList({ title, items }) {
+  const list = Array.isArray(items) ? items.filter(Boolean) : [];
+
+  if (!list.length) return null;
+
+  return (
+    <div className="opportunities__insight-section">
+      <h4>{title}</h4>
+      <ul>
+        {list.map((item, index) => (
+          <li key={`${title}-${index}`}>{item}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -333,6 +364,8 @@ function Opportunities() {
   const [savingId, setSavingId] = useState(null);
   const [success, setSuccess] = useState('');
   const [actionError, setActionError] = useState('');
+  const [insight, setInsight] = useState(null);
+  const [insightLoadingId, setInsightLoadingId] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !user && tab !== 'browse') {
@@ -530,6 +563,26 @@ function Opportunities() {
       setActionError(err.message || 'Unable to update your saved opportunities.');
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const handleInsight = async (opportunity) => {
+    setInsight(null);
+    setInsightLoadingId(opportunity.id);
+    setSuccess('');
+    setActionError('');
+
+    try {
+      const response = await aiApi.opportunityInsight({
+        opportunity_id: opportunity.id,
+      });
+      setInsight(response.data);
+    } catch (err) {
+      setActionError(
+        err.message || 'Unable to generate an AI insight for this opportunity.'
+      );
+    } finally {
+      setInsightLoadingId(null);
     }
   };
 
@@ -812,6 +865,8 @@ function Opportunities() {
                     saved={savedIds.has(Number(opportunity.id))}
                     saving={savingId === opportunity.id}
                     onToggleSave={handleToggleSave}
+                    onInsight={handleInsight}
+                    insightLoading={insightLoadingId === opportunity.id}
                     user={user}
                     matchView={
                       tab === 'matches' ||
@@ -853,6 +908,87 @@ function Opportunities() {
           )}
         </div>
       </section>
+
+      {insight && (
+        <div
+          className="opportunities__modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="opportunity-insight-title"
+          onClick={() => setInsight(null)}
+        >
+          <div
+            className="card opportunities__modal-card"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="opportunities__modal-head">
+              <div>
+                <span className="badge">
+                  <Sparkles size={14} /> AI insight
+                </span>
+                <h2 id="opportunity-insight-title">
+                  {insight.opportunity.title}
+                </h2>
+                <p>{insight.opportunity.organisation}</p>
+              </div>
+              <button
+                type="button"
+                className="opportunities__modal-close"
+                onClick={() => setInsight(null)}
+                aria-label="Close AI insight"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="opportunities__insight-body">
+              <span
+                className={`opportunities__fit opportunities__fit--${insight.insight.fit_level}`}
+              >
+                {formatLabel(insight.insight.fit_level)} fit
+              </span>
+              <p>{insight.insight.summary}</p>
+
+              <InsightList
+                title="Your strengths for this role"
+                items={insight.insight.strengths}
+              />
+              <InsightList
+                title="Gaps to close"
+                items={insight.insight.gaps}
+              />
+              <InsightList
+                title="Application tips"
+                items={insight.insight.application_tips}
+              />
+              <InsightList
+                title="Questions to prepare"
+                items={insight.insight.questions_to_prepare}
+              />
+
+              <div className="opportunities__modal-actions">
+                {insight.opportunity.application_url && (
+                  <a
+                    className="btn btn-primary btn-sm"
+                    href={insight.opportunity.application_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Apply via source <ExternalLink size={15} />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => setInsight(null)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

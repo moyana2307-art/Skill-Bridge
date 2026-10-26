@@ -10,6 +10,7 @@ const careerGoalsRoutes = require('./careerGoals.routes');
 const roadmapsRoutes = require('./roadmaps.routes');
 const skillsRoutes = require('./skills.routes');
 const opportunitiesRoutes = require('./opportunities.routes');
+const aiRoutes = require('./ai.routes');
 const testRoutes = require('./test.routes');
 
 const router = express.Router();
@@ -22,6 +23,7 @@ router.use('/career-goals', careerGoalsRoutes);
 router.use('/roadmaps', roadmapsRoutes);
 router.use('/skills', skillsRoutes);
 router.use('/opportunities', opportunitiesRoutes);
+router.use('/ai', aiRoutes);
 
 // Test endpoints must never be exposed in production.
 if (env.nodeEnv !== 'production') {

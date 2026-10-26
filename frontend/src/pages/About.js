@@ -95,7 +95,7 @@ function About() {
           </div>
 
           <div className="text-center">
-            <Link to="/register" className="btn btn-secondary btn-lg">
+            <Link to="/register" className="btn btn-primary btn-lg">
               Create Your Free Account
             </Link>
           </div>

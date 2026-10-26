@@ -23,10 +23,10 @@ AI-Powered Career Guidance and Opportunity Matching Platform for young people in
 
 ## Database setup
 
-The database is `skillbridge_ai` (MySQL 8.4, `utf8mb4`). It has 10 InnoDB tables,
-a seeded skills catalogue, and demo opportunities. `schema.sql` and `seed.sql`
-are safe to run again: they use `CREATE TABLE IF NOT EXISTS`, `INSERT IGNORE`,
-and existence checks for demo records.
+The database is `skillbridge_ai` (MySQL 8.4, `utf8mb4`). It has 11 InnoDB tables,
+a seeded skills catalogue, and real opportunities imported from public APIs.
+`schema.sql` and `seed.sql` are safe to run again because they use
+`CREATE TABLE IF NOT EXISTS` and `INSERT IGNORE`.
 
 ### 1. Create the database and tables
 
@@ -45,6 +45,21 @@ Or from **cmd.exe**:
 "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root -p < backend\sql\schema.sql
 "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root -p < backend\sql\seed.sql
 ```
+
+### 1b. Upgrade an existing database
+
+If the database was created before real-data, AI, or profile-picture support,
+run the migrations once as root in order. Migration 001 deletes old demo
+opportunity rows, removes `is_demo`, adds live-sync columns, and creates
+`ai_analyses`. Migration 002 adds the avatar columns to `user_profiles`:
+
+```powershell
+Get-Content backend\sql\migrations\001_real_data_and_ai.sql | & $mysql -u root -p
+Get-Content backend\sql\migrations\002_profile_avatar.sql | & $mysql -u root -p
+```
+
+Both migrations are idempotent and safe to run again. The limited application
+user cannot ALTER tables, so these steps must be done as root.
 
 ### 2. Create the limited application user
 
@@ -79,25 +94,37 @@ net stop MySQL84
 
 ## How to run (development)
 
-Open two terminals from the project root.
+The easiest way: double-click **`start-skillbridge.cmd`** in the project root.
+On first run it installs every dependency, then starts both services and opens
+`http://localhost:3000` in your browser automatically once they are ready.
 
-**Terminal 1 - backend:**
+Or run it from a terminal, from the project root:
 
 ```bash
-cd backend
 npm.cmd run dev
 ```
 
-The API starts at `http://localhost:5000`. Test it: `http://localhost:5000/api/health`
-
-**Terminal 2 - frontend:**
+Install every dependency once if you have not already:
 
 ```bash
-cd frontend
-npm.cmd start
+npm.cmd run install:all
 ```
 
-React opens at `http://localhost:3000`.
+This starts the backend at `http://localhost:5000` and the frontend at
+`http://localhost:3000`, then opens the browser when both are reachable. It
+checks both services first, so it is safe to run again: services that are
+already running are skipped rather than started twice. Press `Ctrl+C` to stop
+the services it started.
+
+To start the services without opening a browser, use `npm.cmd run dev -- --no-open`
+or set `NO_OPEN=1`.
+
+If you prefer separate terminals, you can still run `npm.cmd run dev` in
+`backend` and `npm.cmd start` in `frontend`.
+
+> A web page cannot start local processes by itself for security reasons, so
+> opening `http://localhost:3000` in a browser cannot boot the backend. Use the
+> launcher or `npm.cmd run dev` instead.
 
 ## Run checks
 
@@ -107,10 +134,10 @@ npm.cmd test -- --watchAll=false
 npm.cmd run build
 ```
 
-The tests cover the landing page, the login page, protected-route redirects,
-My Skills, career goals, learning roadmaps, and the opportunity directory,
-matching, and saved views. The backend auth flow is documented under
-[Test the auth flow](#test-the-auth-flow).
+The tests cover the landing page, login and registration flows, profile-picture
+upload and removal, protected-route redirects, My Skills, career goals, learning
+roadmaps, and the opportunity directory, matching, and saved views. The backend
+auth flow is documented under [Test the auth flow](#test-the-auth-flow).
 
 ## API foundation
 
@@ -154,6 +181,8 @@ Every error response uses the same shape:
 | `GET` | `/api/auth/me` | Current user (protected) |
 | `GET` | `/api/profile` | Current user's profile (protected) |
 | `PATCH` | `/api/profile` | Update the current user's profile (protected) |
+| `POST` | `/api/profile/avatar` | Upload a profile picture (`avatar` multipart field, protected) |
+| `DELETE` | `/api/profile/avatar` | Remove the profile picture (protected) |
 | `GET` | `/api/profile/skills` | List the current user's skills (protected) |
 | `POST` | `/api/profile/skills` | Add a catalogue skill to the profile (protected) |
 | `PATCH` | `/api/profile/skills/:skillId` | Update the proficiency level (protected) |
@@ -185,6 +214,13 @@ Every error response uses the same shape:
 | `POST` | `/api/opportunities` | Create an opportunity (admin only) |
 | `PATCH` | `/api/opportunities/:id` | Update an opportunity (admin only) |
 | `DELETE` | `/api/opportunities/:id` | Delete an opportunity (admin only) |
+| `POST` | `/api/opportunities/sync` | Import fresh real listings (admin only) |
+| `POST` | `/api/ai/skills-gap` | Generate a skills-gap analysis (protected) |
+| `GET` | `/api/ai/skills-gap/latest` | Latest saved skills-gap analysis (protected) |
+| `POST` | `/api/ai/roadmaps` | Generate and save a learning roadmap (protected) |
+| `POST` | `/api/ai/opportunity-insight` | Explain how an opportunity fits (protected) |
+| `POST` | `/api/ai/profile-review` | Review the current profile (protected) |
+| `GET` | `/api/ai/profile-review/latest` | Latest saved profile review (protected) |
 | `GET` | `/api/test` | Development-only connectivity check |
 | `POST` | `/api/test/echo` | Development-only validation check |
 
@@ -233,11 +269,25 @@ calendar dates (for example `2026-02-31`), and URLs that are not `http` or
   `/roadmaps` are connected to these endpoints. Everything except the auth
   pages, home, about, and opportunities is wrapped in `ProtectedRoute`.
 
+### Profile pictures
+
+- The profile page can add, change, or remove a picture. Uploads are cropped
+  square and compressed to a 512×512 JPEG in the browser before being sent.
+- The backend accepts JPEG, PNG, or WebP files up to 2 MB, checks the actual
+  file signature rather than trusting the filename or browser MIME type, and
+  stores the image in MySQL (`user_profiles.avatar_data` / `avatar_mime`). This
+  keeps pictures available across backend restarts and redeploys.
+- Profile responses and `/api/auth/me` include the current user's picture as a
+  data URL so the sidebar and mobile header can show it without another request.
+- Removing a picture clears both avatar columns and restores the initials
+  fallback.
+
 Packages used by this stage:
 
 - `bcryptjs` — hashes passwords without requiring a native build on Windows.
 - `jsonwebtoken` — signs and verifies the login token.
 - `cookie-parser` — lets Express read the httpOnly cookie.
+- `multer` — reads the in-memory multipart profile-picture upload.
 
 The JWT is stateless. Logging out clears the cookie in the browser, but a copy
 of the token would remain valid until it expires. Keep `JWT_EXPIRES_IN` short
@@ -300,16 +350,44 @@ login:
 - Saved opportunities are private to the logged-in user.
 
 The frontend `/opportunities` page has a public Browse view, protected For you
-and Saved views, filters, match scores, skill chips, and save/remove controls.
-Demo records show a **Demo** badge and an **Apply via source** link that opens the
-listing or learning page in a new tab.
+and Saved views, filters, match scores, skill chips, save/remove controls, and
+an **Apply via source** link that opens the real listing in a new tab.
 
-The seed file creates 14 clearly labelled demo opportunities: six jobs and two
-each of internships, training, courses, and scholarships. Their apply links point
-to live LinkedIn search, LinkedIn Learning, freeCodeCamp, Google Digital Garage,
-or Scholarships.com pages so the external apply/enrol action can be exercised.
-No real applications are submitted by SkillBridge AI. There is no admin
-opportunity screen yet; further records are added through the admin API.
+There are no demo listings. Real opportunities are imported from Remotive and,
+when an approved ReliefWeb appname is configured, ReliefWeb.
+
+- The backend syncs shortly after startup and every
+  `OPPORTUNITY_SYNC_INTERVAL_HOURS` hours (default 6).
+- Records are upserted on `(source_name, external_id)`, so repeated syncs never
+  duplicate a listing.
+- Listings no longer returned by a source are marked inactive only after a
+  successful fetch that returned at least one result.
+- Admins can trigger a sync with `POST /api/opportunities/sync`. Promote an
+  account first with `npm.cmd run make-admin -- you@example.com`.
+- ReliefWeb requires an approved appname from
+  <https://apidoc.reliefweb.int/parameters#appname>. Set
+  `RELIEFWEB_APP_NAME` in `backend/.env`; when it is empty, ReliefWeb is skipped
+  and Remotive still works.
+
+### AI career features
+
+All AI endpoints require login, use the caller's own profile, skills, and goals,
+and store their output in `ai_analyses` so it can be shown again:
+
+- **Skills-gap analysis** (`/analysis`): a 0-100 readiness score, strengths, gaps
+  with priorities, next steps, and project ideas.
+- **AI roadmap generation** (Roadmaps page): drafts a 4-52 week plan and saves
+  the roadmap and all tasks in one transaction. Every generated task remains
+  editable.
+- **Opportunity insight** (Opportunities page): a fit level, strengths, gaps,
+  application tips, and questions to prepare for a specific listing.
+- **Profile review** (Profile page): a completeness score, strengths,
+  improvements, and suggested headline/about wording.
+
+Set `OPENAI_API_KEY` in `backend/.env`. If it is missing, these endpoints return
+a clear configuration error instead of crashing the server. AI output is
+educational guidance and can be wrong; it never guarantees a job, scholarship,
+or admission.
 
 ### Test the auth flow
 
@@ -320,6 +398,17 @@ opportunity screen yet; further records are added through the admin API.
 5. `POST /api/auth/logout`, then `GET /api/profile` should return `401`.
 6. `GET /api/profile` without logging in should also return `401`.
 7. A normal user calling `POST /api/skills` should receive `403`.
+
+### Test profile pictures
+
+1. In the browser, log in and open `/profile`.
+2. Choose a JPEG, PNG, or WebP image under 10 MB with **Add picture**. The
+   browser crops and compresses it, then the image should appear in the preview,
+   sidebar, and mobile header.
+3. Reload the page; the picture should still be there.
+4. Use **Remove** and confirm the initials fallback returns.
+5. `POST /api/profile/avatar` with a multipart field named `avatar` should reject
+   text files and files over 2 MB with `400 BAD_REQUEST`.
 
 ### Test skills management
 
@@ -355,21 +444,23 @@ opportunity screen yet; further records are added through the admin API.
 
 ### Test opportunity matching and saving
 
-1. Run `backend/sql/seed.sql`. `GET /api/opportunities` should return 14 demo
-   records: six jobs, two internships, two training programmes, two courses, and
-   two scholarships.
+1. Start the backend (or run an admin sync). `GET /api/opportunities` should
+   return real records with a `source_name` such as `Remotive`. If it is empty,
+   check the sync log and your network connection.
 2. Log in, add HTML, CSS, JavaScript, React, and Git to the profile, then call
-   `GET /api/opportunities/matches`. The Junior Frontend Developer demo job
-   should have `match_score: 100`.
+   `GET /api/opportunities/matches`. Listings that mention those skills should
+   have a non-null `match_score`.
 3. `POST /api/opportunities/:id/save` should return `201` the first time and
    `200` when repeated. `GET /api/opportunities/saved` should contain it.
 4. `DELETE /api/opportunities/:id/save` removes it; repeating the delete returns
    `404`.
-5. Use **Apply via source** on a demo card and confirm the external page opens.
+5. Use **Apply via source** on a card and confirm the real external page opens.
    No application is submitted by SkillBridge AI.
 6. In the browser, open `/opportunities` while logged out and use the public
    filters. After logging in, check For you, save an opportunity, open Saved,
    remove it, and confirm the card disappears.
+7. Click **Why this fits** on a card (requires a valid `OPENAI_API_KEY`) and
+   confirm the AI insight dialog appears.
 
 ## Environment variables
 
@@ -381,8 +472,20 @@ to `backend/.env` and fill in real values, including a long random `JWT_SECRET`:
 ```
 
 `CLIENT_URL` must match the browser origin that calls the API, because it is
-used for CORS and credentialed requests. In production, serve the API over
-HTTPS so the `Secure` login cookie is accepted.
+used for CORS and credentialed requests. Separate multiple allowed origins with
+commas. In production, serve the API over HTTPS so the `Secure` login cookie is
+accepted.
+
+AI and live-sync settings:
+
+| Variable | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | Required for all `/api/ai/*` endpoints |
+| `OPENAI_MODEL` | Model name, default `gpt-4o-mini` |
+| `OPENAI_TIMEOUT_MS` | Request timeout, default `45000` |
+| `OPPORTUNITY_SYNC_ENABLED` | Start the background sync, default `true` |
+| `OPPORTUNITY_SYNC_INTERVAL_HOURS` | Refresh interval, default `6` |
+| `RELIEFWEB_APP_NAME` | Approved ReliefWeb appname; empty skips ReliefWeb |
 
 The frontend reads `REACT_APP_API_URL` and defaults to
 `http://localhost:5000/api`. To point it at another API, create
@@ -394,12 +497,86 @@ REACT_APP_API_URL=https://your-api.example.com/api
 
 Create React App reads this value at build time, so rebuild after changing it.
 
+## Deployment (Vercel + Render + managed MySQL)
+
+The repository includes `render.yaml`, `frontend/vercel.json`, and
+`frontend/.env.production.example` for this setup:
+
+- **Frontend:** Vercel, root directory `frontend`
+- **Backend:** Render web service, root directory `backend`
+- **Database:** managed MySQL 8 with TLS (for example Aiven or Railway; Render
+  does not provide managed MySQL)
+
+### 1. Prepare the database
+
+Create the managed database and note its host, port, user, password, and
+database name. Run the schema, seed, and migration as an administrative user
+from a machine with the MySQL client:
+
+```powershell
+$mysql = "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe"
+$mysqlArgs = @("-h", "your-db-host", "-P", "3306", "-u", "admin-user", "-p", "--ssl-mode=REQUIRED", "skillbridge_ai")
+
+Get-Content backend\sql\schema.sql | & $mysql @mysqlArgs
+Get-Content backend\sql\seed.sql   | & $mysql @mysqlArgs
+Get-Content backend\sql\migrations\001_real_data_and_ai.sql | & $mysql @mysqlArgs
+Get-Content backend\sql\migrations\002_profile_avatar.sql | & $mysql @mysqlArgs
+```
+
+Use the same database name in `DB_NAME`. For the running API, prefer a
+least-privilege user that can only `SELECT`, `INSERT`, `UPDATE`, and `DELETE`.
+
+### 2. Deploy the backend on Render
+
+1. Push this repository to GitHub.
+2. In Render choose **New > Blueprint** and select the repository.
+   `render.yaml` creates the web service automatically.
+3. Fill in the secret environment variables when prompted:
+   `CLIENT_URL`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`,
+   `OPENAI_API_KEY`, and `RELIEFWEB_APP_NAME` (optional).
+4. Set `CLIENT_URL` to the final Vercel URL (for example
+   `https://skillbridge-ai.vercel.app`). Add custom domains and preview URLs as a
+   comma-separated list.
+5. Deploy and confirm `https://your-api.onrender.com/api/health` returns a
+   healthy database status.
+6. Promote your account with `npm.cmd run make-admin -- you@example.com` against
+   the production database, then call `POST /api/opportunities/sync` once. The
+   server also syncs on startup and every 6 hours.
+
+### 3. Deploy the frontend on Vercel
+
+1. Import the same repository into Vercel.
+2. Set the **Root Directory** to `frontend`; Vercel detects Create React App.
+3. Add the environment variable
+   `REACT_APP_API_URL=https://your-api.onrender.com/api`.
+4. Deploy. `frontend/vercel.json` rewrites client-side routes such as
+   `/opportunities` and `/analysis` to `index.html`.
+5. Update `CLIENT_URL` on Render if Vercel assigned a different production URL,
+   then redeploy or restart the API.
+
+### Production checklist
+
+- Use HTTPS on both services; the login cookie is `Secure` and `SameSite=None`
+  in production.
+- Use a long random `JWT_SECRET` and never commit `backend/.env`.
+- Set `DB_SSL=true` for managed MySQL. Set
+  `DB_SSL_REJECT_UNAUTHORIZED=false` only if your provider's certificate cannot
+  be validated.
+- Confirm `OPENAI_API_KEY` is set before using the AI pages.
+- Request a ReliefWeb appname at
+  <https://apidoc.reliefweb.int/parameters#appname>; without it, only Remotive
+  listings are imported.
+- Render's free web service sleeps when idle; the first request after a sleep is
+  slower and the startup sync runs again on wake.
+
 ## Project structure
 
 ```
 skillbridge-ai/
     frontend/     React app (Create React App)
     backend/      Express API
+    scripts/      dev launcher and make-admin helper
+    render.yaml   Render backend blueprint
     README.md
     .gitignore
 ```

@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   career_interests VARCHAR(500) DEFAULT NULL,
   location VARCHAR(100) DEFAULT NULL,
   learning_preferences VARCHAR(500) DEFAULT NULL,
+  avatar_data MEDIUMBLOB DEFAULT NULL,
+  avatar_mime VARCHAR(30) DEFAULT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     ON UPDATE CURRENT_TIMESTAMP,
@@ -142,8 +144,8 @@ CREATE TABLE IF NOT EXISTS roadmap_tasks (
 ) ENGINE=InnoDB;
 
 -- 8. opportunities: jobs, internships, scholarships, training, courses.
---    Admin-managed. is_demo = 1 marks clearly labelled demonstration
---    records so we never present invented data as verified fact.
+--    Real records imported from public APIs or entered by an admin. The
+--    (source_name, external_id) unique key makes repeated syncs idempotent.
 CREATE TABLE IF NOT EXISTS opportunities (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   title VARCHAR(200) NOT NULL,
@@ -158,12 +160,14 @@ CREATE TABLE IF NOT EXISTS opportunities (
   application_deadline DATE DEFAULT NULL,
   application_url VARCHAR(500) DEFAULT NULL,
   source_name VARCHAR(150) DEFAULT NULL,
-  is_demo TINYINT(1) NOT NULL DEFAULT 1,
+  external_id VARCHAR(200) DEFAULT NULL,
+  last_synced_at TIMESTAMP NULL DEFAULT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
+  UNIQUE KEY uq_opportunities_source_external (source_name, external_id),
   KEY idx_opportunities_type (opportunity_type),
   KEY idx_opportunities_active (is_active)
 ) ENGINE=InnoDB;
@@ -202,5 +206,29 @@ CREATE TABLE IF NOT EXISTS user_progress (
     ON DELETE CASCADE,
   CONSTRAINT fk_user_progress_task
     FOREIGN KEY (roadmap_task_id) REFERENCES roadmap_tasks (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 11. ai_analyses: saved AI results so users can revisit their latest
+--     skills-gap analysis, opportunity insight, or profile review.
+CREATE TABLE IF NOT EXISTS ai_analyses (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id INT UNSIGNED NOT NULL,
+  analysis_type VARCHAR(50) NOT NULL,
+  career_goal_id INT UNSIGNED DEFAULT NULL,
+  opportunity_id INT UNSIGNED DEFAULT NULL,
+  model VARCHAR(100) DEFAULT NULL,
+  payload JSON NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_ai_analyses_user_type (user_id, analysis_type, created_at),
+  CONSTRAINT fk_ai_analyses_user
+    FOREIGN KEY (user_id) REFERENCES users (id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_ai_analyses_goal
+    FOREIGN KEY (career_goal_id) REFERENCES career_goals (id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_ai_analyses_opportunity
+    FOREIGN KEY (opportunity_id) REFERENCES opportunities (id)
     ON DELETE CASCADE
 ) ENGINE=InnoDB;
