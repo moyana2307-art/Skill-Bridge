@@ -33,6 +33,8 @@ services:
         sync: false
       - key: JWT_EXPIRES_IN
         value: 7d
+      - key: AI_PROVIDER
+        value: openai
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL

@@ -2,7 +2,7 @@
 // skills, and goals, and persist the result so it can be revisited.
 const aiCareerService = require('../services/aiCareer.service');
 const aiAnalysesService = require('../services/aiAnalyses.service');
-const { env } = require('../config/env');
+const aiService = require('../services/ai.service');
 const { sendSuccess } = require('../utils/response');
 
 // POST /api/ai/skills-gap
@@ -15,7 +15,7 @@ async function skillsGap(req, res) {
   const saved = await aiAnalysesService.saveAnalysis(req.user.id, {
     type: 'skills_gap',
     careerGoalId: result.career_goal_id,
-    model: env.openai.model,
+    model: aiService.getModelName(),
     payload: result.analysis,
   });
 
@@ -74,7 +74,7 @@ async function opportunityInsight(req, res) {
   const saved = await aiAnalysesService.saveAnalysis(req.user.id, {
     type: 'opportunity_insight',
     opportunityId: result.opportunity.id,
-    model: env.openai.model,
+    model: aiService.getModelName(),
     payload: result.insight,
   });
 

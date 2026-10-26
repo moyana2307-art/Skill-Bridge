@@ -1,8 +1,7 @@
 // AI career features: skills-gap analysis, roadmap generation, opportunity
 // insights, and profile reviews. Each function builds a grounded prompt from
-// the user's own profile/skills, asks OpenAI for JSON, then validates and
-// normalises the result before it reaches the database or the browser.
-const { env } = require('../config/env');
+// the user's own profile/skills, asks the configured AI provider for JSON, then
+// validates and normalises the result before it reaches the database or browser.
 const ApiError = require('../utils/ApiError');
 const aiService = require('./ai.service');
 const profileService = require('./profile.service');
@@ -402,7 +401,7 @@ Use 3-5 items per array. Base every comment on the supplied profile; do not inve
     });
   }
 
-  return { review, model: env.openai.model };
+  return { review, model: aiService.getModelName() };
 }
 
 module.exports = {

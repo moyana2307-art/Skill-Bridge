@@ -19,6 +19,10 @@ function toList(value) {
     .filter(Boolean);
 }
 
+function toBaseUrl(value, fallback) {
+  return String(value || fallback).trim().replace(/\/+$/, '');
+}
+
 const clientUrls = toList(process.env.CLIENT_URL || 'http://localhost:3000');
 
 const env = {
@@ -38,6 +42,16 @@ const env = {
   jwt: {
     secret: process.env.JWT_SECRET || '',
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  },
+  ai: {
+    // Local Ollama is the free default. Set AI_PROVIDER=openai to use OpenAI.
+    provider: String(process.env.AI_PROVIDER || 'ollama').trim().toLowerCase(),
+  },
+  ollama: {
+    baseUrl: toBaseUrl(process.env.OLLAMA_BASE_URL, 'http://127.0.0.1:11434'),
+    model: process.env.OLLAMA_MODEL || 'llama3.2:3b',
+    timeoutMs: toInt(process.env.OLLAMA_TIMEOUT_MS, 120000),
+    numCtx: toInt(process.env.OLLAMA_NUM_CTX, 4096),
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY || '',
@@ -72,19 +86,8 @@ function assertAuthConfigured() {
   }
 }
 
-// AI endpoints fail with a clear message instead of crashing the whole server
-// when the key has not been configured yet.
-function assertOpenAIConfigured() {
-  if (!env.openai.apiKey) {
-    throw new Error(
-      'Missing OPENAI_API_KEY in backend/.env. Add your OpenAI key to enable AI features.'
-    );
-  }
-}
-
 module.exports = {
   env,
   assertDatabaseConfigured,
   assertAuthConfigured,
-  assertOpenAIConfigured,
 };

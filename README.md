@@ -9,13 +9,15 @@ AI-Powered Career Guidance and Opportunity Matching Platform for young people in
 - **Database:** MySQL (via `mysql2`) — configured in Stage 3
 - **Authentication:** bcryptjs password hashing, JSON Web Tokens in an
   httpOnly cookie, `cookie-parser`
-- **AI:** OpenAI API (backend only) — configured in Stage 8
+- **AI:** Local Ollama by default (free, no API credits) with optional OpenAI
+  support (backend only)
 
 ## Prerequisites
 
 - Node.js v24+ and npm 11+
 - Git
 - MySQL Server 8.4 (installed locally as the Windows service `MySQL84`)
+- Ollama for free local AI: <https://ollama.com/download>
 
 > **Windows note:** if PowerShell says `.ps1 cannot be loaded because running scripts is disabled`,
 > use `npm.cmd` / `npx.cmd` instead of `npm` / `npx`, or run:
@@ -384,10 +386,23 @@ and store their output in `ai_analyses` so it can be shown again:
 - **Profile review** (Profile page): a completeness score, strengths,
   improvements, and suggested headline/about wording.
 
-Set `OPENAI_API_KEY` in `backend/.env`. If it is missing, these endpoints return
-a clear configuration error instead of crashing the server. AI output is
-educational guidance and can be wrong; it never guarantees a job, scholarship,
-or admission.
+The default provider is **local Ollama**, which is free and does not use API
+credits. Install Ollama, start it, and download the default model once:
+
+```powershell
+ollama pull llama3.2:3b
+```
+
+The backend expects Ollama at `http://127.0.0.1:11434`. To use a different model
+or machine, change `OLLAMA_MODEL` or `OLLAMA_BASE_URL` in `backend/.env`. The
+first request after a model loads can take longer; increase
+`OLLAMA_TIMEOUT_MS` if needed. If Ollama is not running or the model is missing,
+these endpoints return a clear configuration error instead of crashing the
+server.
+
+To use OpenAI instead, set `AI_PROVIDER=openai` and provide
+`OPENAI_API_KEY`. AI output is educational guidance and can be wrong; it never
+guarantees a job, scholarship, or admission.
 
 ### Test the auth flow
 
@@ -459,8 +474,8 @@ or admission.
 6. In the browser, open `/opportunities` while logged out and use the public
    filters. After logging in, check For you, save an opportunity, open Saved,
    remove it, and confirm the card disappears.
-7. Click **Why this fits** on a card (requires a valid `OPENAI_API_KEY`) and
-   confirm the AI insight dialog appears.
+7. Click **Why this fits** on a card (requires Ollama and the configured model)
+   and confirm the AI insight dialog appears.
 
 ## Environment variables
 
@@ -480,9 +495,14 @@ AI and live-sync settings:
 
 | Variable | Purpose |
 | --- | --- |
-| `OPENAI_API_KEY` | Required for all `/api/ai/*` endpoints |
-| `OPENAI_MODEL` | Model name, default `gpt-4o-mini` |
-| `OPENAI_TIMEOUT_MS` | Request timeout, default `45000` |
+| `AI_PROVIDER` | `ollama` (free local default) or `openai` |
+| `OLLAMA_BASE_URL` | Ollama API URL, default `http://127.0.0.1:11434` |
+| `OLLAMA_MODEL` | Local model name, default `llama3.2:3b` |
+| `OLLAMA_TIMEOUT_MS` | Local model timeout, default `120000` |
+| `OLLAMA_NUM_CTX` | Context window size, default `4096` |
+| `OPENAI_API_KEY` | Only required when `AI_PROVIDER=openai` |
+| `OPENAI_MODEL` | OpenAI model name, default `gpt-4o-mini` |
+| `OPENAI_TIMEOUT_MS` | OpenAI request timeout, default `45000` |
 | `OPPORTUNITY_SYNC_ENABLED` | Start the background sync, default `true` |
 | `OPPORTUNITY_SYNC_INTERVAL_HOURS` | Refresh interval, default `6` |
 | `RELIEFWEB_APP_NAME` | Approved ReliefWeb appname; empty skips ReliefWeb |
@@ -533,7 +553,10 @@ least-privilege user that can only `SELECT`, `INSERT`, `UPDATE`, and `DELETE`.
    `render.yaml` creates the web service automatically.
 3. Fill in the secret environment variables when prompted:
    `CLIENT_URL`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`,
-   `OPENAI_API_KEY`, and `RELIEFWEB_APP_NAME` (optional).
+   `OPENAI_API_KEY` (only for `AI_PROVIDER=openai`), and
+   `RELIEFWEB_APP_NAME` (optional). A local Ollama server cannot be reached at
+   `127.0.0.1` from Render; point `OLLAMA_BASE_URL` at a reachable Ollama host or
+   use OpenAI for the deployed backend.
 4. Set `CLIENT_URL` to the final Vercel URL (for example
    `https://skillbridge-ai.vercel.app`). Add custom domains and preview URLs as a
    comma-separated list.
@@ -562,7 +585,8 @@ least-privilege user that can only `SELECT`, `INSERT`, `UPDATE`, and `DELETE`.
 - Set `DB_SSL=true` for managed MySQL. Set
   `DB_SSL_REJECT_UNAUTHORIZED=false` only if your provider's certificate cannot
   be validated.
-- Confirm `OPENAI_API_KEY` is set before using the AI pages.
+- Confirm the AI provider is reachable before using the AI pages: local Ollama
+  for development, or `AI_PROVIDER=openai` with a valid key on the deployed API.
 - Request a ReliefWeb appname at
   <https://apidoc.reliefweb.int/parameters#appname>; without it, only Remotive
   listings are imported.
