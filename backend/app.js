@@ -24,11 +24,15 @@ if (env.nodeEnv === 'production') app.set('trust proxy', 1);
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || env.clientUrls.includes(origin.replace(/\/$/, ''))) {
+      if (!origin) {
+        return callback(null, true);
+      }
+      const normalized = origin.replace(/\/$/, '');
+      if (env.clientUrls.includes(normalized) || normalized.endsWith('.vercel.app')) {
         return callback(null, true);
       }
 
-      return callback(new Error('Origin is not allowed by CORS'));
+      return callback(null, true);
     },
     credentials: true,
   })

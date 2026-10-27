@@ -8,7 +8,7 @@ const { pool } = require('./config/db');
 const { syncOpportunities } = require('./services/opportunitySync.service');
 
 // In serverless environments (like Vercel), don't start a listener
-if (process.env.VERCEL || process.env.SERVERLESS) {
+if (process.env.VERCEL || process.env.SERVERLESS || process.env.NODE_ENV === 'production') {
   // Don't fail fast in serverless - just warn
   try {
     assertDatabaseConfigured();

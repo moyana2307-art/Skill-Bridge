@@ -17,15 +17,13 @@ function durationToMs(value) {
 }
 
 function cookieOptions() {
-  // In production the frontend (for example Vercel) and the API (for example
-  // Render) are on different sites, so the cookie must be SameSite=None and
-  // Secure or the browser will not send it on API requests.
+  // For same-domain rewrites use Lax
   const isProduction = env.nodeEnv === 'production';
 
   return {
     httpOnly: true,
-    sameSite: isProduction ? 'none' : 'lax',
-    secure: isProduction,
+    sameSite: 'lax',
+    secure: false,
     path: '/',
   };
 }
