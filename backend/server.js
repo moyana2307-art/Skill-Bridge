@@ -9,6 +9,13 @@ const { syncOpportunities } = require('./services/opportunitySync.service');
 
 // In serverless environments (like Vercel), don't start a listener
 if (process.env.VERCEL || process.env.SERVERLESS) {
+  // Don't fail fast in serverless - just warn
+  try {
+    assertDatabaseConfigured();
+    assertAuthConfigured();
+  } catch (err) {
+    console.error(`\n[serverless] Configuration issue: ${err.message}\n`);
+  }
   module.exports = app;
 } else {
   // Fail fast with a clear message if the database is not configured.
