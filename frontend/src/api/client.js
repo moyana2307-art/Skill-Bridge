@@ -1,7 +1,9 @@
 // One small wrapper around fetch, so every page handles API responses and
 // errors in the same way. credentials: "include" sends the httpOnly login
 // cookie that the backend sets.
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
 
 export class ApiError extends Error {
   constructor(message, status = 0, code = 'ERROR', details = null) {

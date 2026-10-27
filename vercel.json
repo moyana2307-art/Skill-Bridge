@@ -1,0 +1,29 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "skillbridge-ai-api": {
+      "root": "backend",
+      "framework": "express",
+      "buildCommand": "npm install",
+      "entrypoint": "index.js"
+    },
+    "frontend": {
+      "root": "frontend",
+      "framework": "create-react-app"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "skillbridge-ai-api"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
+    }
+  ]
+}
