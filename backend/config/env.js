@@ -61,7 +61,8 @@ const env = {
   opportunitySync: {
     enabled: toBool(process.env.OPPORTUNITY_SYNC_ENABLED, true),
     intervalHours: toInt(process.env.OPPORTUNITY_SYNC_INTERVAL_HOURS, 6),
-    reliefwebAppName: process.env.RELIEFWEB_APP_NAME || '',
+    reliefwebAppName:
+      process.env.RELIEFWEB_APP_NAME || process.env.RELIEFWEB_APPNAME || '',
   },
 };
 
