@@ -6,11 +6,11 @@ const mysql = require('mysql2/promise');
 const { env } = require('./env');
 
 const pool = mysql.createPool({
-  host: env.db.host,
-  port: env.db.port,
-  user: env.db.user,
-  password: env.db.password,
-  database: env.db.name,
+  host: env.db.host || '',
+  port: env.db.port || 3306,
+  user: env.db.user || '',
+  password: env.db.password || '',
+  database: env.db.name || '',
   waitForConnections: true,
   connectionLimit: 10, // maximum simultaneous connections
   queueLimit: 0, // no limit on queued requests
