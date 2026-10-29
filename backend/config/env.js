@@ -24,13 +24,19 @@ function toBaseUrl(value, fallback) {
 }
 
 const clientUrls = toList(process.env.CLIENT_URL || 'http://localhost:3000');
-const connectionString =
+const rawConnectionString =
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.POSTGRES_PRISMA_URL ||
   process.env.POSTGRES_URL_NON_POOLING ||
   process.env.SUPABASE_DATABASE_URL ||
   '';
+const trimmedConnectionString = String(rawConnectionString).trim();
+const connectionString =
+  (trimmedConnectionString.startsWith('"') && trimmedConnectionString.endsWith('"')) ||
+  (trimmedConnectionString.startsWith("'") && trimmedConnectionString.endsWith("'"))
+    ? trimmedConnectionString.slice(1, -1).trim()
+    : trimmedConnectionString;
 
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
