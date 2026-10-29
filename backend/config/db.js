@@ -32,4 +32,21 @@ async function testConnection() {
   return result.rows[0]?.ok === 1;
 }
 
-module.exports = { pool, testConnection };
+function getConnectionInfo() {
+  if (!env.db.connectionString) {
+    return { source: 'db_variables', host: env.db.host, port: env.db.port };
+  }
+
+  try {
+    const parsed = new URL(env.db.connectionString);
+    return {
+      source: 'connection_string',
+      host: parsed.hostname,
+      port: Number(parsed.port || 5432),
+    };
+  } catch {
+    return { source: 'connection_string', host: 'invalid-or-unparseable', port: 5432 };
+  }
+}
+
+module.exports = { pool, testConnection, getConnectionInfo };
