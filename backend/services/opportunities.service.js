@@ -54,29 +54,14 @@ async function listOpportunities(filters) {
 
   if (search) {
     const like = `%${escapeLike(search)}%`;
-    conditions.push('(title LIKE ? OR organisation LIKE ? OR description LIKE ?)');
     values.push(like, like, like);
+    const base = values.length - 2;
+    conditions.push(`(title ILIKE $${base} ESCAPE '\\' OR organisation ILIKE $${base + 1} ESCAPE '\\' OR description ILIKE $${base + 2} ESCAPE '\\')`);
   }
-
-  if (type) {
-    conditions.push('opportunity_type = ?');
-    values.push(type);
-  }
-
-  if (location) {
-    conditions.push('location LIKE ?');
-    values.push(`%${escapeLike(location)}%`);
-  }
-
-  if (is_remote !== undefined) {
-    conditions.push('is_remote = ?');
-    values.push(is_remote ? 1 : 0);
-  }
-
-  if (is_active !== undefined) {
-    conditions.push('is_active = ?');
-    values.push(is_active ? 1 : 0);
-  }
+  if (type) { values.push(type); conditions.push(`opportunity_type = $${values.length}`); }
+  if (location) { values.push(`%${escapeLike(location)}%`); conditions.push(`location ILIKE $${values.length} ESCAPE '\\'`); }
+  if (is_remote !== undefined) { values.push(Boolean(is_remote)); conditions.push(`is_remote = $${values.length}`); }
+  if (is_active !== undefined) { values.push(Boolean(is_active)); conditions.push(`is_active = $${values.length}`); }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   const offset = (page - 1) * limit;
@@ -89,14 +74,14 @@ async function listOpportunities(filters) {
       ? `ORDER BY application_deadline IS NULL ASC, application_deadline ${direction}, id ${direction}`
       : `ORDER BY ${sortColumn} ${direction}, id ${direction}`;
 
-  const [rows] = await pool.execute(
-    `SELECT ${OPPORTUNITY_COLUMNS} FROM opportunities ${where} ${orderBy} LIMIT ? OFFSET ?`,
-    [...values, limit, offset]
-  );
-
-  const [countRows] = await pool.execute(
-    `SELECT COUNT(*) AS total FROM opportunities ${where}`,
+  const countValues = [...values];
+  values.push(limit, offset);
+  const { rows } = await pool.query(
+    `SELECT ${OPPORTUNITY_COLUMNS} FROM opportunities ${where} ${orderBy} LIMIT $${values.length - 1} OFFSET $${values.length}`,
     values
+  );
+  const { rows: countRows } = await pool.query(
+    `SELECT COUNT(*) AS total FROM opportunities ${where}`, countValues
   );
 
   return {
@@ -109,10 +94,7 @@ async function listOpportunities(filters) {
 
 // GET /api/opportunities/:id
 async function getOpportunityById(id) {
-  const [rows] = await pool.execute(`SELECT ${OPPORTUNITY_COLUMNS} FROM opportunities WHERE id = ?`, [
-    id,
-  ]);
-
+  const { rows } = await pool.query(`SELECT ${OPPORTUNITY_COLUMNS} FROM opportunities WHERE id = $1`, [id]);
   return mapOpportunity(rows[0]);
 }
 
@@ -124,16 +106,16 @@ async function createOpportunity(data) {
   for (const column of UPDATABLE_COLUMNS) {
     if (data[column] === undefined) continue;
     columns.push(column);
-    values.push(typeof data[column] === 'boolean' ? (data[column] ? 1 : 0) : data[column]);
+    values.push(data[column]);
   }
 
-  const placeholders = columns.map(() => '?').join(', ');
-  const [result] = await pool.execute(
-    `INSERT INTO opportunities (${columns.join(', ')}) VALUES (${placeholders})`,
+  const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+  const { rows } = await pool.query(
+    `INSERT INTO opportunities (${columns.join(', ')}) VALUES (${placeholders}) RETURNING id`,
     values
   );
 
-  return getOpportunityById(result.insertId);
+  return getOpportunityById(rows[0].id);
 }
 
 // PATCH /api/opportunities/:id
@@ -143,28 +125,27 @@ async function updateOpportunity(id, fields) {
 
   for (const column of UPDATABLE_COLUMNS) {
     if (fields[column] === undefined) continue;
-    columns.push(`${column} = ?`);
-    values.push(typeof fields[column] === 'boolean' ? (fields[column] ? 1 : 0) : fields[column]);
+    columns.push(`${column} = $${values.length + 1}`);
+    values.push(typeof fields[column] === 'boolean' ? fields[column] : fields[column]);
   }
 
   if (!columns.length) return getOpportunityById(id);
 
   values.push(id);
-  const [result] = await pool.execute(
-    `UPDATE opportunities SET ${columns.join(', ')} WHERE id = ?`,
+  const result = await pool.query(
+    `UPDATE opportunities SET ${columns.join(', ')} WHERE id = $${values.length}`,
     values
   );
 
-  if (!result.affectedRows) return null;
+  if (!result.rowCount) return null;
 
   return getOpportunityById(id);
 }
 
 // DELETE /api/opportunities/:id
 async function deleteOpportunity(id) {
-  const [result] = await pool.execute('DELETE FROM opportunities WHERE id = ?', [id]);
-
-  return result.affectedRows > 0;
+  const result = await pool.query('DELETE FROM opportunities WHERE id = $1', [id]);
+  return result.rowCount > 0;
 }
 
 const SAVED_OPPORTUNITY_SELECT = `
@@ -175,9 +156,9 @@ const SAVED_OPPORTUNITY_SELECT = `
 
 // GET /api/opportunities/saved
 async function listSavedOpportunities(userId) {
-  const [rows] = await pool.execute(
+  const { rows } = await pool.query(
     `${SAVED_OPPORTUNITY_SELECT}
-     WHERE so.user_id = ?
+     WHERE so.user_id = $1
      ORDER BY so.saved_at DESC, o.id DESC`,
     [userId]
   );
@@ -186,9 +167,9 @@ async function listSavedOpportunities(userId) {
 }
 
 async function getSavedOpportunity(userId, opportunityId) {
-  const [rows] = await pool.execute(
+  const { rows } = await pool.query(
     `${SAVED_OPPORTUNITY_SELECT}
-     WHERE so.user_id = ? AND so.opportunity_id = ?`,
+     WHERE so.user_id = $1 AND so.opportunity_id = $2`,
     [userId, opportunityId]
   );
 
@@ -196,8 +177,8 @@ async function getSavedOpportunity(userId, opportunityId) {
 }
 
 async function listSavedIds(userId) {
-  const [rows] = await pool.execute(
-    'SELECT opportunity_id FROM saved_opportunities WHERE user_id = ?',
+  const { rows } = await pool.query(
+    'SELECT opportunity_id FROM saved_opportunities WHERE user_id = $1',
     [userId]
   );
 
@@ -209,25 +190,25 @@ async function saveOpportunity(userId, opportunityId) {
   const opportunity = await getOpportunityById(opportunityId);
   if (!opportunity) return { status: 'not_found' };
 
-  const [result] = await pool.execute(
-    'INSERT IGNORE INTO saved_opportunities (user_id, opportunity_id) VALUES (?, ?)',
+  const result = await pool.query(
+    'INSERT INTO saved_opportunities (user_id, opportunity_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
     [userId, opportunityId]
   );
 
   return {
-    status: result.affectedRows ? 'created' : 'already_saved',
+    status: result.rowCount ? 'created' : 'already_saved',
     opportunity: await getSavedOpportunity(userId, opportunityId),
   };
 }
 
 // DELETE /api/opportunities/:id/save
 async function removeSavedOpportunity(userId, opportunityId) {
-  const [result] = await pool.execute(
-    'DELETE FROM saved_opportunities WHERE user_id = ? AND opportunity_id = ?',
+  const result = await pool.query(
+    'DELETE FROM saved_opportunities WHERE user_id = $1 AND opportunity_id = $2',
     [userId, opportunityId]
   );
 
-  return result.affectedRows > 0;
+  return result.rowCount > 0;
 }
 
 // Skills are stored as free text on opportunities. Comma-separated names are
@@ -266,11 +247,11 @@ function deadlineKey(value) {
 // has. The score is calculated here in JavaScript because required_skills is
 // free text, not a join table.
 async function listMatchingOpportunities(userId, filters) {
-  const [userSkillRows] = await pool.execute(
+  const { rows: userSkillRows } = await pool.query(
     `SELECT s.name
      FROM user_skills us
      JOIN skills s ON s.id = us.skill_id
-     WHERE us.user_id = ?`,
+     WHERE us.user_id = $1`,
     [userId]
   );
 

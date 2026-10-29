@@ -6,7 +6,7 @@ AI-Powered Career Guidance and Opportunity Matching Platform for young people in
 
 - **Frontend:** React (Create React App), React Router, Fetch API, plain CSS
 - **Backend:** Node.js, Express (REST API)
-- **Database:** MySQL (via `mysql2`) — configured in Stage 3
+- **Database:** PostgreSQL on Supabase (via the `pg` driver)
 - **Authentication:** bcryptjs password hashing, JSON Web Tokens in an
   httpOnly cookie, `cookie-parser`
 - **AI:** Local Ollama by default (free, no API credits) with optional OpenAI
@@ -16,7 +16,7 @@ AI-Powered Career Guidance and Opportunity Matching Platform for young people in
 
 - Node.js v24+ and npm 11+
 - Git
-- MySQL Server 8.4 (installed locally as the Windows service `MySQL84`)
+- A Supabase PostgreSQL database
 - Ollama for free local AI: <https://ollama.com/download>
 
 > **Windows note:** if PowerShell says `.ps1 cannot be loaded because running scripts is disabled`,
@@ -25,74 +25,41 @@ AI-Powered Career Guidance and Opportunity Matching Platform for young people in
 
 ## Database setup
 
-The database is `skillbridge_ai` (MySQL 8.4, `utf8mb4`). It has 11 InnoDB tables,
-a seeded skills catalogue, and real opportunities imported from public APIs.
-`schema.sql` and `seed.sql` are safe to run again because they use
-`CREATE TABLE IF NOT EXISTS` and `INSERT IGNORE`.
+The application uses PostgreSQL on Supabase. The schema is in
+`backend/sql/schema.sql`, seed data is in `backend/sql/seed.sql`, and
+PostgreSQL migrations are in `backend/sql/migrations/`.
 
-### 1. Create the database and tables
+### 1. Create the tables and seed data
 
-Run these as MySQL root. In **PowerShell**, use `Get-Content | mysql` because
-PowerShell does not support the `<` input redirection operator:
+Copy the contents of `backend/sql/schema.sql` into the Supabase SQL Editor and
+run it, then do the same for `backend/sql/seed.sql`. For an existing database,
+run the migration files in numeric order if needed.
 
-```powershell
-$mysql = "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe"
-Get-Content backend\sql\schema.sql | & $mysql -u root -p
-Get-Content backend\sql\seed.sql   | & $mysql -u root -p
-```
-
-Or from **cmd.exe**:
-
-```bat
-"C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root -p < backend\sql\schema.sql
-"C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root -p < backend\sql\seed.sql
-```
-
-### 1b. Upgrade an existing database
-
-If the database was created before real-data, AI, or profile-picture support,
-run the migrations once as root in order. Migration 001 deletes old demo
-opportunity rows, removes `is_demo`, adds live-sync columns, and creates
-`ai_analyses`. Migration 002 adds the avatar columns to `user_profiles`:
+The `psql` equivalent is:
 
 ```powershell
-Get-Content backend\sql\migrations\001_real_data_and_ai.sql | & $mysql -u root -p
-Get-Content backend\sql\migrations\002_profile_avatar.sql | & $mysql -u root -p
+psql "$env:DATABASE_URL" -f backend/sql/schema.sql
+psql "$env:DATABASE_URL" -f backend/sql/seed.sql
 ```
 
-Both migrations are idempotent and safe to run again. The limited application
-user cannot ALTER tables, so these steps must be done as root.
+### 2. Configure the connection
 
-### 2. Create the limited application user
+Copy `backend/.env.example` to `backend/.env`. Prefer the Supabase transaction
+or session pooler connection string:
 
-The API must not connect as root. Create a user that can only read and write
-rows in this database (no `CREATE`, `DROP`, or access to other databases).
-Choose your own strong password, put the same value in `backend/.env`, and never
-commit it:
-
-```sql
-CREATE USER 'skillbridge_app'@'localhost' IDENTIFIED BY 'choose-a-strong-password';
-GRANT SELECT, INSERT, UPDATE, DELETE ON skillbridge_ai.* TO 'skillbridge_app'@'localhost';
-FLUSH PRIVILEGES;
+```text
+DATABASE_URL=postgresql://postgres:password@host:5432/postgres
+DB_SSL=true
+DB_SSL_REJECT_UNAUTHORIZED=true
 ```
 
-### 3. Configure the connection
+The real `.env` is ignored by Git. Do not put database credentials in frontend
+files.
 
-Copy `backend/.env.example` to `backend/.env`, then set `DB_USER`,
-`DB_PASSWORD`, and `DB_NAME`. The real `.env` is ignored by Git.
-
-### 4. Verify
+### 3. Verify
 
 Start the backend and open `http://localhost:5000/api/health`. A healthy
 response contains `"status": "ok"` and `"database": "connected"`.
-
-Service commands (run in an **administrator** terminal if needed):
-
-```powershell
-Get-Service MySQL84
-net start MySQL84
-net stop MySQL84
-```
 
 ## How to run (development)
 
@@ -153,7 +120,7 @@ backend/
   validators/    Zod schemas for params, query strings, and JSON bodies
   middleware/    validation, async errors, 404s, logging, error handling
   utils/         ApiError and shared response helpers
-  config/        environment variables, MySQL pool, shared constants
+  config/        environment variables, PostgreSQL pool, shared constants
 ```
 
 Every successful response uses the same shape:
@@ -277,7 +244,7 @@ calendar dates (for example `2026-02-31`), and URLs that are not `http` or
   square and compressed to a 512×512 JPEG in the browser before being sent.
 - The backend accepts JPEG, PNG, or WebP files up to 2 MB, checks the actual
   file signature rather than trusting the filename or browser MIME type, and
-  stores the image in MySQL (`user_profiles.avatar_data` / `avatar_mime`). This
+  stores the image in PostgreSQL (`user_profiles.avatar_data` / `avatar_mime`). This
   keeps pictures available across backend restarts and redeploys.
 - Profile responses and `/api/auth/me` include the current user's picture as a
   data URL so the sidebar and mobile header can show it without another request.
@@ -517,81 +484,68 @@ REACT_APP_API_URL=https://your-api.example.com/api
 
 Create React App reads this value at build time, so rebuild after changing it.
 
-## Deployment (Vercel + Render + managed MySQL)
+## Deployment (Vercel + Supabase PostgreSQL)
 
-The repository includes `render.yaml`, `frontend/vercel.json`, and
-`frontend/.env.production.example` for this setup:
+The root `vercel.json` deploys the frontend and Express API as two services
+behind one Vercel domain:
 
-- **Frontend:** Vercel, root directory `frontend`
-- **Backend:** Render web service, root directory `backend`
-- **Database:** managed MySQL 8 with TLS (for example Aiven or Railway; Render
-  does not provide managed MySQL)
+- **Frontend:** `/`
+- **API:** `/api/*`
+- **Database:** Supabase PostgreSQL
 
-### 1. Prepare the database
+### 1. Create the Supabase database
 
-Create the managed database and note its host, port, user, password, and
-database name. Run the schema, seed, and migration as an administrative user
-from a machine with the MySQL client:
+Run the PostgreSQL schema in the Supabase SQL Editor:
 
-```powershell
-$mysql = "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe"
-$mysqlArgs = @("-h", "your-db-host", "-P", "3306", "-u", "admin-user", "-p", "--ssl-mode=REQUIRED", "skillbridge_ai")
-
-Get-Content backend\sql\schema.sql | & $mysql @mysqlArgs
-Get-Content backend\sql\seed.sql   | & $mysql @mysqlArgs
-Get-Content backend\sql\migrations\001_real_data_and_ai.sql | & $mysql @mysqlArgs
-Get-Content backend\sql\migrations\002_profile_avatar.sql | & $mysql @mysqlArgs
+```sql
+-- Open backend/sql/schema.sql and execute it in the Supabase SQL Editor.
+-- Then open backend/sql/seed.sql and execute it.
 ```
 
-Use the same database name in `DB_NAME`. For the running API, prefer a
-least-privilege user that can only `SELECT`, `INSERT`, `UPDATE`, and `DELETE`.
+A `psql` alternative is:
 
-### 2. Deploy the backend on Render
+```powershell
+psql "$env:DATABASE_URL" -f backend/sql/schema.sql
+psql "$env:DATABASE_URL" -f backend/sql/seed.sql
+```
 
-1. Push this repository to GitHub.
-2. In Render choose **New > Blueprint** and select the repository.
-   `render.yaml` creates the web service automatically.
-3. Fill in the secret environment variables when prompted:
-   `CLIENT_URL`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`,
-   `OPENAI_API_KEY` (only for `AI_PROVIDER=openai`), and
-   `RELIEFWEB_APP_NAME` (optional). A local Ollama server cannot be reached at
-   `127.0.0.1` from Render; point `OLLAMA_BASE_URL` at a reachable Ollama host or
-   use OpenAI for the deployed backend.
-4. Set `CLIENT_URL` to the final Vercel URL (for example
-   `https://skillbridge-ai.vercel.app`). Add custom domains and preview URLs as a
-   comma-separated list.
-5. Deploy and confirm `https://your-api.onrender.com/api/health` returns a
-   healthy database status.
-6. Promote your account with `npm.cmd run make-admin -- you@example.com` against
-   the production database, then call `POST /api/opportunities/sync` once. The
-   server also syncs on startup and every 6 hours.
+### 2. Configure Vercel
 
-### 3. Deploy the frontend on Vercel
+In Project Settings → Environment Variables, add production values for:
 
-1. Import the same repository into Vercel.
-2. Set the **Root Directory** to `frontend`; Vercel detects Create React App.
-3. Add the environment variable
-   `REACT_APP_API_URL=https://your-api.onrender.com/api`.
-4. Deploy. `frontend/vercel.json` rewrites client-side routes such as
-   `/opportunities` and `/analysis` to `index.html`.
-5. Update `CLIENT_URL` on Render if Vercel assigned a different production URL,
-   then redeploy or restart the API.
+- `DATABASE_URL`: Supabase transaction/session pooler connection string
+- `DB_SSL=true`
+- `DB_SSL_REJECT_UNAUTHORIZED=true`
+- `JWT_SECRET`: a new long random value
+- `JWT_EXPIRES_IN=7d`
+- `CLIENT_URL=https://your-project.vercel.app`
+- `NODE_ENV=production`
+- `AI_PROVIDER=openai`
+- `OPENAI_API_KEY`: your secret OpenAI API key
+
+Do not add real secrets to frontend environment files or source code.
+
+### 3. Deploy
+
+Import this repository without changing the root directory. The root
+configuration builds the Create React App frontend and the Express API, then
+routes `/api/*` to the API service.
+
+After deployment, verify:
+
+```text
+https://your-project.vercel.app/api/health
+```
+
+The response should contain `"database":"connected"` and HTTP 200.
 
 ### Production checklist
 
-- Use HTTPS on both services; the login cookie is `Secure` and `SameSite=None`
-  in production.
-- Use a long random `JWT_SECRET` and never commit `backend/.env`.
-- Set `DB_SSL=true` for managed MySQL. Set
-  `DB_SSL_REJECT_UNAUTHORIZED=false` only if your provider's certificate cannot
-  be validated.
-- Confirm the AI provider is reachable before using the AI pages: local Ollama
-  for development, or `AI_PROVIDER=openai` with a valid key on the deployed API.
-- Request a ReliefWeb appname at
-  <https://apidoc.reliefweb.int/parameters#appname>; without it, only Remotive
-  listings are imported.
-- Render's free web service sleeps when idle; the first request after a sleep is
-  slower and the startup sync runs again on wake.
+- Use the Supabase pooler connection string for serverless Vercel functions.
+- Use HTTPS and a final Vercel domain in `CLIENT_URL`.
+- Use a long random production `JWT_SECRET`.
+- Keep `DB_SSL=true` for managed PostgreSQL.
+- Confirm OpenAI credentials and billing before using AI pages.
 
 ## Project structure
 

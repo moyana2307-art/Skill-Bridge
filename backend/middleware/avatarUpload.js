@@ -1,5 +1,5 @@
 // Reads one profile-picture upload into memory so it can be validated before
-// being stored in MySQL. Files never touch the server's temporary disk.
+// being stored in PostgreSQL BYTEA. Files never touch the server's temporary disk.
 const multer = require('multer');
 const ApiError = require('../utils/ApiError');
 

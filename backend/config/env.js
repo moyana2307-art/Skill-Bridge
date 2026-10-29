@@ -31,12 +31,13 @@ const env = {
   clientUrl: clientUrls[0] || 'http://localhost:3000',
   clientUrls,
   db: {
+    connectionString: process.env.DATABASE_URL || '',
     host: process.env.DB_HOST || 'localhost',
-    port: toInt(process.env.DB_PORT, 3306),
+    port: toInt(process.env.DB_PORT, 5432),
     user: process.env.DB_USER || '',
     password: process.env.DB_PASSWORD || '',
-    name: process.env.DB_NAME || '',
-    ssl: toBool(process.env.DB_SSL, false),
+    name: process.env.DB_NAME || 'postgres',
+    ssl: toBool(process.env.DB_SSL, process.env.DATABASE_URL ? true : false),
     sslRejectUnauthorized: toBool(process.env.DB_SSL_REJECT_UNAUTHORIZED, true),
     sslCa: process.env.DB_SSL_CA || '',
   },
@@ -69,14 +70,20 @@ const env = {
 
 // The database settings are the only ones the server cannot start without.
 function assertDatabaseConfigured() {
-  const missing = ['DB_NAME', 'DB_USER'].filter((key) => !env.db[key.toLowerCase().replace('db_', '')]);
+  if (env.db.connectionString) return true;
+
+  const missing = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'].filter((key) => {
+    const field = key === 'DB_NAME' ? 'name' : key.toLowerCase().replace('db_', '');
+    return !env.db[field];
+  });
 
   if (missing.length) {
     throw new Error(
-      `Missing database settings in backend/.env: ${missing.join(', ')}. ` +
-        'Copy backend/.env.example to backend/.env and fill in the values.'
+      `Missing PostgreSQL settings in backend/.env: ${missing.join(', ')}. ` +
+        'Copy backend/.env.example to backend/.env and set DATABASE_URL or the DB_* fallback values.'
     );
   }
+  return true;
 }
 
 // Login tokens cannot be signed without a secret. It must be long and random.

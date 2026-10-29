@@ -9,38 +9,12 @@
 const ApiError = require('../utils/ApiError');
 const { sendError } = require('../utils/response');
 
-// MySQL error codes we can explain safely to the user.
-const MYSQL_ERRORS = {
-  ER_DUP_ENTRY: {
-    statusCode: 409,
-    code: 'CONFLICT',
-    message: 'A record with those details already exists.',
-  },
-  ER_NO_REFERENCE_ROW_2: {
-    statusCode: 400,
-    code: 'INVALID_REFERENCE',
-    message: 'One of the referenced records does not exist.',
-  },
-  ER_ROW_IS_REFERENCED_2: {
-    statusCode: 409,
-    code: 'CONFLICT',
-    message: 'That record is still being used by other records.',
-  },
-  ER_BAD_NULL_ERROR: {
-    statusCode: 400,
-    code: 'BAD_REQUEST',
-    message: 'A required value was missing.',
-  },
-  ER_TRUNCATED_WRONG_VALUE: {
-    statusCode: 400,
-    code: 'BAD_REQUEST',
-    message: 'One of the values has the wrong format.',
-  },
-  ER_DATA_TOO_LONG: {
-    statusCode: 400,
-    code: 'BAD_REQUEST',
-    message: 'One of the values is longer than the database allows.',
-  },
+// PostgreSQL SQLSTATE codes we can explain safely to the user.
+const POSTGRES_ERRORS = {
+  '23505': { statusCode: 409, code: 'CONFLICT', message: 'A record with those details already exists.' },
+  '23503': { statusCode: 400, code: 'INVALID_REFERENCE', message: 'One of the referenced records does not exist.' },
+  '23502': { statusCode: 400, code: 'BAD_REQUEST', message: 'A required value was missing.' },
+  '22001': { statusCode: 400, code: 'BAD_REQUEST', message: 'One of the values is longer than the database allows.' },
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -67,8 +41,8 @@ function errorHandler(err, req, res, next) {
     statusCode = 415;
     code = 'UNSUPPORTED_MEDIA_TYPE';
     message = 'That content type is not supported. Send application/json.';
-  } else if (err.code && MYSQL_ERRORS[err.code]) {
-    const mapped = MYSQL_ERRORS[err.code];
+  } else if (err.code && POSTGRES_ERRORS[err.code]) {
+    const mapped = POSTGRES_ERRORS[err.code];
     statusCode = mapped.statusCode;
     code = mapped.code;
     message = mapped.message;

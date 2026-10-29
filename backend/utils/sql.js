@@ -14,8 +14,8 @@ function buildWhere(conditions) {
 
   for (const { column, operator = '=', value } of conditions) {
     if (value === undefined || value === null || value === '') continue;
-    clauses.push(`${column} ${operator} ?`);
     values.push(value);
+    clauses.push(`${column} ${operator} $${values.length}`);
   }
 
   return {
@@ -24,4 +24,8 @@ function buildWhere(conditions) {
   };
 }
 
-module.exports = { escapeLike, buildWhere };
+function placeholders(count, offset = 0) {
+  return Array.from({ length: count }, (_, index) => `$${offset + index + 1}`);
+}
+
+module.exports = { escapeLike, buildWhere, placeholders };

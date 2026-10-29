@@ -6,14 +6,12 @@
 -- real listings from ReliefWeb and Remotive on startup and every few hours
 -- (see OPPORTUNITY_SYNC_* in backend/.env), or an admin can trigger a sync.
 --
--- Safe to run more than once: skills use INSERT IGNORE.
--- Run as root AFTER schema.sql:
---   mysql -u root < backend/sql/seed.sql
+-- Safe to run more than once: skills use ON CONFLICT DO NOTHING.
+-- Run after schema.sql:
+--   psql "$DATABASE_URL" -f backend/sql/seed.sql
 -- ============================================================
 
-USE skillbridge_ai;
-
-INSERT IGNORE INTO skills (name, category) VALUES
+INSERT INTO skills (name, category) VALUES
   ('HTML', 'Programming'),
   ('CSS', 'Programming'),
   ('JavaScript', 'Programming'),
@@ -41,4 +39,5 @@ INSERT IGNORE INTO skills (name, category) VALUES
   ('Teamwork', 'Professional'),
   ('Problem Solving', 'Professional'),
   ('Time Management', 'Professional'),
-  ('English Proficiency', 'Professional');
+  ('English Proficiency', 'Professional')
+ON CONFLICT (name) DO NOTHING;

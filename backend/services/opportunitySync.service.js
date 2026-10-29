@@ -188,20 +188,21 @@ async function upsertOpportunities(items, runAt) {
 
   for (const item of items) {
     const values = COLUMNS.map((column) => {
-      if (column === 'is_active') return item.is_active ?? 1;
+      if (column === 'is_active') return item.is_active ?? true;
+      if (column === 'is_remote') return Boolean(item.is_remote);
       if (column === 'last_synced_at') return item.last_synced_at ?? runAt;
       return item[column] ?? null;
     });
     const updateClause = COLUMNS.filter(
       (column) => !['source_name', 'external_id'].includes(column)
     )
-      .map((column) => `${column} = incoming.${column}`)
+      .map((column) => `${column} = EXCLUDED.${column}`)
       .join(', ');
 
-    await pool.execute(
+    await pool.query(
       `INSERT INTO opportunities (${COLUMNS.join(', ')})
-       VALUES (${COLUMNS.map(() => '?').join(', ')}) AS incoming
-       ON DUPLICATE KEY UPDATE ${updateClause}`,
+       VALUES (${COLUMNS.map((_, index) => `$${index + 1}`).join(', ')})
+       ON CONFLICT (source_name, external_id) DO UPDATE SET ${updateClause}`,
       values
     );
 
@@ -245,12 +246,12 @@ async function runSync() {
       }
 
       const saved = await upsertOpportunities(items, runAt);
-      const [deactivateResult] = await pool.execute(
+      const deactivateResult = await pool.query(
         `UPDATE opportunities
-         SET is_active = 0
-         WHERE source_name = ?
+         SET is_active = FALSE
+         WHERE source_name = $1
            AND external_id IS NOT NULL
-           AND (last_synced_at IS NULL OR last_synced_at < ?)`,
+           AND (last_synced_at IS NULL OR last_synced_at < $2)`,
         [provider.name, runAt]
       );
 
@@ -259,7 +260,7 @@ async function runSync() {
         name: provider.name,
         fetched: items.length,
         saved,
-        deactivated: deactivateResult.affectedRows,
+        deactivated: deactivateResult.rowCount,
       });
     } catch (err) {
       console.error(`[sync] ${provider.name} failed:`, err.message);
