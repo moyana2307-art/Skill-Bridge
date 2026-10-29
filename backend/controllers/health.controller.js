@@ -5,6 +5,7 @@ const { sendSuccess } = require('../utils/response');
 async function getHealth(req, res) {
   let database = 'disconnected';
   let databaseLatencyMs = null;
+  let databaseErrorCode = null;
 
   try {
     const startedAt = Date.now();
@@ -12,7 +13,8 @@ async function getHealth(req, res) {
     databaseLatencyMs = Date.now() - startedAt;
     database = 'connected';
   } catch (err) {
-    console.error('Database health check failed:', err.message);
+    databaseErrorCode = err.code || err.name || 'DATABASE_CONNECTION_ERROR';
+    console.error('Database health check failed:', err.code || err.name, err.message);
   }
 
   const healthy = database === 'connected';
@@ -26,6 +28,7 @@ async function getHealth(req, res) {
       message: 'SkillBridge AI API is running',
       database,
       databaseLatencyMs,
+      ...(databaseErrorCode ? { databaseErrorCode } : {}),
       uptimeSeconds: Math.round(process.uptime()),
       timestamp: new Date().toISOString(),
     },

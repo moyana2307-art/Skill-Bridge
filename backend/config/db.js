@@ -20,7 +20,10 @@ const pool = mysql.createPool({
   // can be set to false only if the provider's certificate is not trusted by
   // the host; prefer keeping it true.
   ssl: env.db.ssl
-    ? { rejectUnauthorized: env.db.sslRejectUnauthorized }
+    ? {
+        rejectUnauthorized: env.db.sslRejectUnauthorized,
+        ...(env.db.sslCa ? { ca: env.db.sslCa.replace(/\\n/g, '\n') } : {}),
+      }
     : undefined,
   // DATE columns are returned as 'YYYY-MM-DD' strings so a deadline never
   // shifts a day because of the machine's time zone.

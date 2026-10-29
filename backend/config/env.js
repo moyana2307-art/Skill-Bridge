@@ -38,6 +38,7 @@ const env = {
     name: process.env.DB_NAME || '',
     ssl: toBool(process.env.DB_SSL, false),
     sslRejectUnauthorized: toBool(process.env.DB_SSL_REJECT_UNAUTHORIZED, true),
+    sslCa: process.env.DB_SSL_CA || '',
   },
   jwt: {
     secret: process.env.JWT_SECRET || '',
