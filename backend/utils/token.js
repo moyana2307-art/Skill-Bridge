@@ -23,7 +23,7 @@ function cookieOptions() {
   return {
     httpOnly: true,
     sameSite: 'lax',
-    secure: false,
+    secure: isProduction,
     path: '/',
   };
 }
