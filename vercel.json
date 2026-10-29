@@ -4,7 +4,8 @@
     "skillbridge-ai-api": {
       "root": "backend",
       "framework": "express",
-      "buildCommand": "npm install"
+      "buildCommand": "npm install",
+      "entrypoint": "index.js"
     },
     "frontend": {
       "root": "frontend",

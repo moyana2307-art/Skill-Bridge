@@ -24,6 +24,13 @@ function toBaseUrl(value, fallback) {
 }
 
 const clientUrls = toList(process.env.CLIENT_URL || 'http://localhost:3000');
+const connectionString =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.SUPABASE_DATABASE_URL ||
+  '';
 
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -31,13 +38,13 @@ const env = {
   clientUrl: clientUrls[0] || 'http://localhost:3000',
   clientUrls,
   db: {
-    connectionString: process.env.DATABASE_URL || '',
+    connectionString,
     host: process.env.DB_HOST || 'localhost',
     port: toInt(process.env.DB_PORT, 5432),
     user: process.env.DB_USER || '',
     password: process.env.DB_PASSWORD || '',
     name: process.env.DB_NAME || 'postgres',
-    ssl: toBool(process.env.DB_SSL, process.env.DATABASE_URL ? true : false),
+    ssl: toBool(process.env.DB_SSL, connectionString ? true : false),
     sslRejectUnauthorized: toBool(process.env.DB_SSL_REJECT_UNAUTHORIZED, true),
     sslCa: process.env.DB_SSL_CA || '',
   },
