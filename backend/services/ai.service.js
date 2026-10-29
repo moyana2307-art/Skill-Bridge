@@ -1,12 +1,13 @@
 // AI transport layer. Every AI feature calls generateJson() and receives a
 // parsed JavaScript object. Prompts live with the feature that owns them (see
 // aiCareer.service.js) so this file stays about provider selection, timeouts,
-// and clear errors. Local Ollama is the free default; OpenAI remains optional.
+// and clear errors. Local Ollama is the free default; Pollinations is the
+// no-key hosted fallback; OpenAI remains optional.
 const OpenAI = require('openai');
 const { env } = require('../config/env');
 const ApiError = require('../utils/ApiError');
 
-const SUPPORTED_PROVIDERS = new Set(['ollama', 'openai']);
+const SUPPORTED_PROVIDERS = new Set(['ollama', 'pollinations', 'openai']);
 
 let openaiClient = null;
 
@@ -16,7 +17,7 @@ function getProvider() {
   if (!SUPPORTED_PROVIDERS.has(provider)) {
     throw new ApiError(
       503,
-      `Unsupported AI_PROVIDER "${provider}". Use "ollama" or "openai".`,
+      `Unsupported AI_PROVIDER "${provider}". Use "ollama", "pollinations", or "openai".`,
       { code: 'AI_NOT_CONFIGURED' }
     );
   }
@@ -25,7 +26,12 @@ function getProvider() {
 }
 
 function getModelName() {
-  return getProvider() === 'ollama' ? env.ollama.model : env.openai.model;
+  const provider = getProvider();
+
+  if (provider === 'ollama') return env.ollama.model;
+  if (provider === 'pollinations') return env.pollinations.model;
+
+  return env.openai.model;
 }
 
 function getOpenAIClient() {
@@ -241,11 +247,108 @@ async function generateWithOllama({ system, user, temperature }) {
   }
 }
 
+function pollinationsHttpError(status, body, raw) {
+  if (status === 429) {
+    return new ApiError(429, 'The hosted AI service is busy right now. Try again shortly.', {
+      code: 'AI_RATE_LIMITED',
+    });
+  }
+
+  console.error('[ai] Pollinations request failed:', status, body?.error || raw);
+
+  return new ApiError(
+    502,
+    'The hosted AI service could not complete that request. Please try again.',
+    { code: 'AI_UPSTREAM_ERROR' }
+  );
+}
+
+async function generateWithPollinations({ system, user, temperature }) {
+  const { baseUrl, model, timeoutMs, referrer } = env.pollinations;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (referrer) headers.Referer = referrer;
+
+    const response = await fetch(`${baseUrl}/openai`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model,
+        temperature,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+      }),
+      signal: controller.signal,
+    });
+
+    const raw = await response.text();
+    let body = null;
+
+    try {
+      body = raw ? JSON.parse(raw) : null;
+    } catch {
+      // The status code and raw text still give us enough information below.
+    }
+
+    if (!response.ok) {
+      throw pollinationsHttpError(response.status, body, raw);
+    }
+
+    return parseModelJson(body?.choices?.[0]?.message?.content);
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+
+    if (err?.name === 'AbortError') {
+      throw new ApiError(
+        504,
+        `The hosted AI service did not respond within ${Math.round(timeoutMs / 1000)} seconds. Please try again.`,
+        { code: 'AI_TIMEOUT' }
+      );
+    }
+
+    const code = err?.cause?.code || err?.code;
+    const connectionFailed = [
+      'ECONNREFUSED',
+      'ECONNRESET',
+      'ENOTFOUND',
+      'EAI_AGAIN',
+    ].includes(code);
+
+    if (connectionFailed) {
+      throw new ApiError(
+        503,
+        'Cannot reach the hosted AI service right now. Please try again shortly.',
+        { code: 'AI_NOT_CONFIGURED' }
+      );
+    }
+
+    console.error('[ai] Pollinations request failed:', err?.message || err);
+
+    throw new ApiError(
+      502,
+      'The hosted AI service could not complete that request. Please try again.',
+      { code: 'AI_UPSTREAM_ERROR' }
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function generateJson({ system, user, temperature = 0.4 }) {
   const provider = getProvider();
 
   if (provider === 'ollama') {
     return generateWithOllama({ system, user, temperature });
+  }
+
+  if (provider === 'pollinations') {
+    return generateWithPollinations({ system, user, temperature });
   }
 
   return generateWithOpenAI({ system, user, temperature });

@@ -9,7 +9,8 @@ AI-Powered Career Guidance and Opportunity Matching Platform for young people in
 - **Database:** PostgreSQL on Supabase (via the `pg` driver)
 - **Authentication:** bcryptjs password hashing, JSON Web Tokens in an
   httpOnly cookie, `cookie-parser`
-- **AI:** Local Ollama by default (free, no API credits) with optional OpenAI
+- **AI:** Local Ollama by default (free, no API credits), hosted Pollinations
+  fallback, or optional OpenAI
   support (backend only)
 
 ## Prerequisites
@@ -367,6 +368,11 @@ first request after a model loads can take longer; increase
 these endpoints return a clear configuration error instead of crashing the
 server.
 
+For a hosted deployment without Ollama, set `AI_PROVIDER=pollinations`. This
+uses the free Pollinations OpenAI-compatible endpoint and needs no API key.
+Set `POLLINATIONS_REFERRER` to the production URL if the service requests an
+identifying referrer.
+
 To use OpenAI instead, set `AI_PROVIDER=openai` and provide
 `OPENAI_API_KEY`. AI output is educational guidance and can be wrong; it never
 guarantees a job, scholarship, or admission.
@@ -462,7 +468,7 @@ AI and live-sync settings:
 
 | Variable | Purpose |
 | --- | --- |
-| `AI_PROVIDER` | `ollama` (free local default) or `openai` |
+| `AI_PROVIDER` | `ollama` (free local default), `pollinations` (free hosted fallback), or `openai` |
 | `OLLAMA_BASE_URL` | Ollama API URL, default `http://127.0.0.1:11434` |
 | `OLLAMA_MODEL` | Local model name, default `llama3.2:3b` |
 | `OLLAMA_TIMEOUT_MS` | Local model timeout, default `120000` |
@@ -470,6 +476,10 @@ AI and live-sync settings:
 | `OPENAI_API_KEY` | Only required when `AI_PROVIDER=openai` |
 | `OPENAI_MODEL` | OpenAI model name, default `gpt-4o-mini` |
 | `OPENAI_TIMEOUT_MS` | OpenAI request timeout, default `45000` |
+| `POLLINATIONS_BASE_URL` | Hosted AI endpoint, default `https://text.pollinations.ai` |
+| `POLLINATIONS_MODEL` | Hosted model alias, default `openai` |
+| `POLLINATIONS_TIMEOUT_MS` | Hosted AI timeout, default `60000` |
+| `POLLINATIONS_REFERRER` | Optional production URL sent as the referrer |
 | `OPPORTUNITY_SYNC_ENABLED` | Start the background sync, default `true` |
 | `OPPORTUNITY_SYNC_INTERVAL_HOURS` | Refresh interval, default `6` |
 | `RELIEFWEB_APP_NAME` | Approved ReliefWeb appname; empty skips ReliefWeb |
@@ -484,44 +494,43 @@ REACT_APP_API_URL=https://your-api.example.com/api
 
 Create React App reads this value at build time, so rebuild after changing it.
 
-## Deployment (Vercel + Supabase PostgreSQL)
+## Deployment (Vercel + PostgreSQL)
 
 The root `vercel.json` deploys the frontend and Express API as two services
 behind one Vercel domain:
 
 - **Frontend:** `/`
 - **API:** `/api/*`
-- **Database:** Supabase PostgreSQL
+- **Database:** PostgreSQL (Neon via the Vercel Marketplace, or Supabase)
 
-### 1. Create the Supabase database
+### 1. Create the PostgreSQL database
 
-Run the PostgreSQL schema in the Supabase SQL Editor:
-
-```sql
--- Open backend/sql/schema.sql and execute it in the Supabase SQL Editor.
--- Then open backend/sql/seed.sql and execute it.
-```
+Add Neon from the Vercel Marketplace, or create a Supabase project. Run the
+schema, seed, and every migration in `backend/sql/migrations` using the
+provider's SQL Editor.
 
 A `psql` alternative is:
 
 ```powershell
 psql "$env:DATABASE_URL" -f backend/sql/schema.sql
 psql "$env:DATABASE_URL" -f backend/sql/seed.sql
+psql "$env:DATABASE_URL" -f backend/sql/migrations/001_real_data_and_ai.sql
+psql "$env:DATABASE_URL" -f backend/sql/migrations/002_profile_avatar.sql
 ```
 
 ### 2. Configure Vercel
 
 In Project Settings → Environment Variables, add production values for:
 
-- `DATABASE_URL`: Supabase transaction/session pooler connection string
+- `DATABASE_URL`: Neon or Supabase pooled PostgreSQL connection string
 - `DB_SSL=true`
 - `DB_SSL_REJECT_UNAUTHORIZED=true`
 - `JWT_SECRET`: a new long random value
 - `JWT_EXPIRES_IN=7d`
 - `CLIENT_URL=https://your-project.vercel.app`
 - `NODE_ENV=production`
-- `AI_PROVIDER=openai`
-- `OPENAI_API_KEY`: your secret OpenAI API key
+- `AI_PROVIDER=pollinations`
+- `POLLINATIONS_REFERRER=https://your-project.vercel.app`
 
 Do not add real secrets to frontend environment files or source code.
 
@@ -541,11 +550,12 @@ The response should contain `"database":"connected"` and HTTP 200.
 
 ### Production checklist
 
-- Use the Supabase pooler connection string for serverless Vercel functions.
+- Use a pooled PostgreSQL connection string for serverless Vercel functions.
 - Use HTTPS and a final Vercel domain in `CLIENT_URL`.
 - Use a long random production `JWT_SECRET`.
 - Keep `DB_SSL=true` for managed PostgreSQL.
-- Confirm OpenAI credentials and billing before using AI pages.
+- Use `AI_PROVIDER=pollinations` on Vercel unless you have working OpenAI
+  credentials and billing.
 
 ## Project structure
 

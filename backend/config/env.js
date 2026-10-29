@@ -59,7 +59,8 @@ const env = {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
   ai: {
-    // Local Ollama is the free default. Set AI_PROVIDER=openai to use OpenAI.
+    // Local Ollama is the free default. Use "pollinations" for the hosted
+    // no-key fallback, or "openai" when OPENAI_API_KEY is configured.
     provider: String(process.env.AI_PROVIDER || 'ollama').trim().toLowerCase(),
   },
   ollama: {
@@ -72,6 +73,12 @@ const env = {
     apiKey: process.env.OPENAI_API_KEY || '',
     model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
     timeoutMs: toInt(process.env.OPENAI_TIMEOUT_MS, 45000),
+  },
+  pollinations: {
+    baseUrl: toBaseUrl(process.env.POLLINATIONS_BASE_URL, 'https://text.pollinations.ai'),
+    model: process.env.POLLINATIONS_MODEL || 'openai',
+    timeoutMs: toInt(process.env.POLLINATIONS_TIMEOUT_MS, 60000),
+    referrer: process.env.POLLINATIONS_REFERRER || '',
   },
   opportunitySync: {
     enabled: toBool(process.env.OPPORTUNITY_SYNC_ENABLED, true),
