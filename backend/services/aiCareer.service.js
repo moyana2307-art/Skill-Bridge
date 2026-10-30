@@ -405,6 +405,7 @@ Use 3-5 items per array. Base every comment on the supplied profile; do not inve
 }
 
 module.exports = {
+  getProfileContext,
   skillsGap,
   generateRoadmap,
   opportunityInsight,

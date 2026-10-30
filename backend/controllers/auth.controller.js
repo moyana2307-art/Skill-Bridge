@@ -1,8 +1,18 @@
 // Registration, login, logout, and "who am I" endpoints.
 const authService = require('../services/auth.service');
+const subscriptionsService = require('../services/subscriptions.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 const { signToken, setAuthCookie, clearAuthCookie } = require('../utils/token');
+
+async function entitlementsFor(userId) {
+  try {
+    return await subscriptionsService.getEntitlements(userId);
+  } catch (err) {
+    console.error('[subscriptions] could not load entitlements:', err.message);
+    return null;
+  }
+}
 
 // POST /api/auth/register
 async function register(req, res) {
@@ -12,7 +22,7 @@ async function register(req, res) {
 
   return sendSuccess(res, {
     statusCode: 201,
-    data: { user },
+    data: { user, entitlements: await entitlementsFor(user.id) },
     message: 'Account created',
   });
 }
@@ -28,7 +38,10 @@ async function login(req, res) {
 
   setAuthCookie(res, signToken(user));
 
-  return sendSuccess(res, { data: { user }, message: 'Logged in' });
+  return sendSuccess(res, {
+    data: { user, entitlements: await entitlementsFor(user.id) },
+    message: 'Logged in',
+  });
 }
 
 // POST /api/auth/logout
@@ -39,8 +52,13 @@ function logout(req, res) {
 }
 
 // GET /api/auth/me
-function me(req, res) {
-  return sendSuccess(res, { data: { user: req.user } });
+async function me(req, res) {
+  return sendSuccess(res, {
+    data: {
+      user: req.user,
+      entitlements: await entitlementsFor(req.user.id),
+    },
+  });
 }
 
 module.exports = { register, login, logout, me };

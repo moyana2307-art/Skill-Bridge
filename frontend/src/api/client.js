@@ -219,3 +219,258 @@ export const opportunitiesApi = {
       method: 'DELETE',
     }),
 };
+
+export const dashboardApi = {
+  get: () => apiRequest('/dashboard'),
+};
+
+export const careerApi = {
+  runAssessment: (data) =>
+    apiRequest('/career/assessments', { method: 'POST', body: data }),
+  latestAssessment: () => apiRequest('/career/assessments/latest'),
+  recommendations: (data) =>
+    apiRequest('/career/recommendations', { method: 'POST', body: data }),
+  latestRecommendations: () => apiRequest('/career/recommendations/latest'),
+  compare: (data) => apiRequest('/career/compare', { method: 'POST', body: data }),
+  latestComparison: () => apiRequest('/career/compare/latest'),
+  requirements: (data) =>
+    apiRequest('/career/requirements', { method: 'POST', body: data }),
+  latestRequirements: () => apiRequest('/career/requirements/latest'),
+};
+
+export const mentorApi = {
+  list: () => apiRequest('/mentor'),
+  create: (data) => apiRequest('/mentor', { method: 'POST', body: data }),
+  get: (threadId) => apiRequest(`/mentor/${encodeURIComponent(threadId)}`),
+  update: (threadId, data) =>
+    apiRequest(`/mentor/${encodeURIComponent(threadId)}`, {
+      method: 'PATCH',
+      body: data,
+    }),
+  remove: (threadId) =>
+    apiRequest(`/mentor/${encodeURIComponent(threadId)}`, { method: 'DELETE' }),
+  send: (threadId, content) =>
+    apiRequest(`/mentor/${encodeURIComponent(threadId)}/messages`, {
+      method: 'POST',
+      body: { content },
+    }),
+};
+
+export const applicationsApi = {
+  list: (params) => apiRequest(`/applications${toQueryString(params)}`),
+  summary: () => apiRequest('/applications/summary'),
+  get: (applicationId) =>
+    apiRequest(`/applications/${encodeURIComponent(applicationId)}`),
+  create: (data) => apiRequest('/applications', { method: 'POST', body: data }),
+  update: (applicationId, data) =>
+    apiRequest(`/applications/${encodeURIComponent(applicationId)}`, {
+      method: 'PATCH',
+      body: data,
+    }),
+  remove: (applicationId) =>
+    apiRequest(`/applications/${encodeURIComponent(applicationId)}`, {
+      method: 'DELETE',
+    }),
+};
+
+export const careerStudioApi = {
+  listCvs: () => apiRequest('/career-studio/cvs'),
+  generateCv: (data) =>
+    apiRequest('/career-studio/cvs', { method: 'POST', body: data }),
+  getCv: (cvId) => apiRequest(`/career-studio/cvs/${encodeURIComponent(cvId)}`),
+  updateCv: (cvId, data) =>
+    apiRequest(`/career-studio/cvs/${encodeURIComponent(cvId)}`, {
+      method: 'PATCH',
+      body: data,
+    }),
+  removeCv: (cvId) =>
+    apiRequest(`/career-studio/cvs/${encodeURIComponent(cvId)}`, {
+      method: 'DELETE',
+    }),
+  analyzeCv: (cvId, data) =>
+    apiRequest(`/career-studio/cvs/${encodeURIComponent(cvId)}/analyze`, {
+      method: 'POST',
+      body: data,
+    }),
+  listCoverLetters: () => apiRequest('/career-studio/cover-letters'),
+  generateCoverLetter: (data) =>
+    apiRequest('/career-studio/cover-letters', { method: 'POST', body: data }),
+  removeCoverLetter: (coverLetterId) =>
+    apiRequest(
+      `/career-studio/cover-letters/${encodeURIComponent(coverLetterId)}`,
+      { method: 'DELETE' }
+    ),
+  listInterviews: () => apiRequest('/career-studio/interviews'),
+  startInterview: (data) =>
+    apiRequest('/career-studio/interviews', { method: 'POST', body: data }),
+  getInterview: (interviewId) =>
+    apiRequest(`/career-studio/interviews/${encodeURIComponent(interviewId)}`),
+  answer: (interviewId, data) =>
+    apiRequest(
+      `/career-studio/interviews/${encodeURIComponent(interviewId)}/answers`,
+      { method: 'POST', body: data }
+    ),
+  completeInterview: (interviewId) =>
+    apiRequest(
+      `/career-studio/interviews/${encodeURIComponent(interviewId)}/complete`,
+      { method: 'POST' }
+    ),
+  removeInterview: (interviewId) =>
+    apiRequest(`/career-studio/interviews/${encodeURIComponent(interviewId)}`, {
+      method: 'DELETE',
+    }),
+};
+
+export const projectsApi = {
+  list: (params) => apiRequest(`/projects${toQueryString(params)}`),
+  get: (projectId) => apiRequest(`/projects/${encodeURIComponent(projectId)}`),
+  create: (data) => apiRequest('/projects', { method: 'POST', body: data }),
+  update: (projectId, data) =>
+    apiRequest(`/projects/${encodeURIComponent(projectId)}`, {
+      method: 'PATCH',
+      body: data,
+    }),
+  remove: (projectId) =>
+    apiRequest(`/projects/${encodeURIComponent(projectId)}`, {
+      method: 'DELETE',
+    }),
+  submit: (projectId) =>
+    apiRequest(`/projects/${encodeURIComponent(projectId)}/submit`, {
+      method: 'POST',
+    }),
+  evaluate: (projectId) =>
+    apiRequest(`/projects/${encodeURIComponent(projectId)}/evaluate`, {
+      method: 'POST',
+    }),
+  recommendations: (data) =>
+    apiRequest('/projects/recommendations', { method: 'POST', body: data }),
+};
+
+export const portfolioApi = {
+  getSettings: () => apiRequest('/portfolio/settings'),
+  updateSettings: (data) =>
+    apiRequest('/portfolio/settings', { method: 'PATCH', body: data }),
+  getPublic: (slug) => apiRequest(`/portfolio/${encodeURIComponent(slug)}`),
+};
+
+export const analyticsApi = {
+  employability: () => apiRequest('/analytics/employability'),
+};
+
+export const notificationsApi = {
+  list: (params) => apiRequest(`/notifications${toQueryString(params)}`),
+  unreadCount: () => apiRequest('/notifications/unread-count'),
+  markRead: (notificationId) =>
+    apiRequest(`/notifications/${encodeURIComponent(notificationId)}/read`, {
+      method: 'PATCH',
+    }),
+  markAllRead: () =>
+    apiRequest('/notifications/read-all', { method: 'POST' }),
+  remove: (notificationId) =>
+    apiRequest(`/notifications/${encodeURIComponent(notificationId)}`, {
+      method: 'DELETE',
+    }),
+};
+
+export const adminApi = {
+  overview: () => apiRequest('/admin/overview'),
+  users: (params) => apiRequest(`/admin/users${toQueryString(params)}`),
+  updateUser: (userId, data) =>
+    apiRequest(`/admin/users/${encodeURIComponent(userId)}`, {
+      method: 'PATCH',
+      body: data,
+    }),
+  removeUser: (userId) =>
+    apiRequest(`/admin/users/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+    }),
+  announce: (data) =>
+    apiRequest('/admin/announcements', { method: 'POST', body: data }),
+  subscriptions: (params) =>
+    apiRequest(`/admin/subscriptions${toQueryString(params)}`),
+  planRequests: (params) =>
+    apiRequest(`/admin/plan-requests${toQueryString(params)}`),
+  reviewPlanRequest: (requestId, status) =>
+    apiRequest(`/admin/plan-requests/${encodeURIComponent(requestId)}`, {
+      method: 'PATCH',
+      body: { status },
+    }),
+  institutions: (params) =>
+    apiRequest(`/admin/institutions${toQueryString(params)}`),
+  updateInstitution: (institutionId, data) =>
+    apiRequest(`/admin/institutions/${encodeURIComponent(institutionId)}`, {
+      method: 'PATCH',
+      body: data,
+    }),
+};
+
+export const subscriptionsApi = {
+  plans: () => apiRequest('/subscriptions/plans'),
+  me: () => apiRequest('/subscriptions/me'),
+  requests: () => apiRequest('/subscriptions/requests'),
+  requestUpgrade: (data) =>
+    apiRequest('/subscriptions/requests', { method: 'POST', body: data }),
+};
+
+export const paymentsApi = {
+  providers: () => apiRequest('/payments/providers'),
+  checkout: (data) =>
+    apiRequest('/payments/checkout', { method: 'POST', body: data }),
+  status: (reference, provider = 'paynow') =>
+    apiRequest(
+      `/payments/status/${encodeURIComponent(reference)}${toQueryString({
+        provider,
+      })}`
+    ),
+};
+
+export const institutionsApi = {
+  list: () => apiRequest('/institutions'),
+  create: (data) => apiRequest('/institutions', { method: 'POST', body: data }),
+  get: (institutionId) =>
+    apiRequest(`/institutions/${encodeURIComponent(institutionId)}`),
+  update: (institutionId, data) =>
+    apiRequest(`/institutions/${encodeURIComponent(institutionId)}`, {
+      method: 'PATCH',
+      body: data,
+    }),
+  addMember: (institutionId, data) =>
+    apiRequest(`/institutions/${encodeURIComponent(institutionId)}/members`, {
+      method: 'POST',
+      body: data,
+    }),
+  addMembers: (institutionId, data) =>
+    apiRequest(
+      `/institutions/${encodeURIComponent(institutionId)}/members/bulk`,
+      { method: 'POST', body: data }
+    ),
+  updateMember: (institutionId, userId, data) =>
+    apiRequest(
+      `/institutions/${encodeURIComponent(
+        institutionId
+      )}/members/${encodeURIComponent(userId)}`,
+      { method: 'PATCH', body: data }
+    ),
+  removeMember: (institutionId, userId) =>
+    apiRequest(
+      `/institutions/${encodeURIComponent(
+        institutionId
+      )}/members/${encodeURIComponent(userId)}`,
+      { method: 'DELETE' }
+    ),
+};
+
+export const resourcesApi = {
+  list: (params) => apiRequest(`/resources${toQueryString(params)}`),
+  get: (resourceId) => apiRequest(`/resources/${encodeURIComponent(resourceId)}`),
+  create: (data) => apiRequest('/resources', { method: 'POST', body: data }),
+  update: (resourceId, data) =>
+    apiRequest(`/resources/${encodeURIComponent(resourceId)}`, {
+      method: 'PATCH',
+      body: data,
+    }),
+  remove: (resourceId) =>
+    apiRequest(`/resources/${encodeURIComponent(resourceId)}`, {
+      method: 'DELETE',
+    }),
+};

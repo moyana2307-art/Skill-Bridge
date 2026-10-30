@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { aiApi, opportunitiesApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import PageHeader from '../components/PageHeader';
+import StatGrid from '../components/StatGrid';
 import './Opportunities.css';
 
 const PAGE_SIZE = 12;
@@ -599,28 +601,17 @@ function Opportunities() {
 
   return (
     <div className="opportunities">
-      <section className="opportunities__hero">
-        <div className="container">
-          <span className="badge">Opportunity matching</span>
-          <h1>Opportunities</h1>
-          <p className="opportunities__intro">
-            Explore jobs, internships, scholarships, training, and courses. Sign
-            in to see how your skills match and to save the ones worth pursuing.
-          </p>
-
-          <div className="opportunities__stats" aria-label="Opportunity totals">
-            {stats.map((stat) => (
-              <div className="opportunities__stat" key={stat.label}>
-                <strong>{stat.value}</strong>
-                <span>{stat.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Opportunity matching"
+        icon={Compass}
+        title="Opportunities"
+        description="Explore jobs, internships, scholarships, training, and courses. Sign in to see how your skills match and to save the ones worth pursuing."
+      />
 
       <section className="section section--soft">
         <div className="container">
+          <StatGrid ariaLabel="Opportunity totals" items={stats} />
+
           {success && (
             <div className="alert alert-success" role="status">
               {success}

@@ -1,0 +1,266 @@
+.admin__stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin__stat {
+  padding: 0.9rem 1rem;
+}
+
+.admin__stat span {
+  display: block;
+  color: var(--color-text-light);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin__stat strong {
+  color: var(--color-primary-dark);
+  font-size: 1.4rem;
+}
+
+.admin__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin__signups,
+.admin__announce,
+.admin__users {
+  padding: 1.4rem;
+}
+
+.admin__signups header,
+.admin__users-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.admin__signups header h2,
+.admin__announce h2,
+.admin__users-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.02rem;
+}
+
+.admin__signups header span {
+  color: var(--color-text-light);
+  font-size: 0.76rem;
+}
+
+.admin__chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  height: 160px;
+}
+
+.admin__bar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  height: 100%;
+  gap: 0.25rem;
+}
+
+.admin__bar {
+  width: 100%;
+  max-width: 24px;
+  border-radius: 5px 5px 2px 2px;
+  background: linear-gradient(180deg, var(--color-secondary), var(--color-primary));
+}
+
+.admin__bar-wrap span {
+  color: var(--color-text-light);
+  font-size: 0.62rem;
+}
+
+.admin__announce .btn {
+  width: 100%;
+}
+
+.admin__filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin__search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-left: 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-light);
+}
+
+.admin__search .form-input {
+  border: 0;
+  padding-left: 0;
+  min-width: 190px;
+}
+
+.admin__search .form-input:focus {
+  outline: none;
+}
+
+.admin__filters .form-select {
+  min-width: 130px;
+}
+
+.admin__table-wrap {
+  overflow-x: auto;
+}
+
+.admin__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.admin__table th {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-light);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.admin__table td {
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.admin__table td:first-child {
+  min-width: 180px;
+}
+
+.admin__table td strong {
+  display: block;
+  font-size: 0.86rem;
+}
+
+.admin__table td small {
+  color: var(--color-text-light);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.admin__role {
+  padding-block: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.admin__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin__pagination span {
+  color: var(--color-text-light);
+  font-size: 0.78rem;
+}
+
+.admin__pagination > div {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.admin__requests,
+.admin__institutions {
+  margin-top: 1.25rem;
+}
+
+.admin__users-head > span {
+  color: var(--color-text-light);
+  font-size: 0.76rem;
+}
+
+.admin__request-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.admin__institution-form {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 340px;
+}
+
+.admin__institution-form .form-select,
+.admin__institution-form .form-input {
+  min-height: 34px;
+  padding: 4px 8px;
+  font-size: 0.76rem;
+}
+
+.admin__institution-form .form-select {
+  min-width: 86px;
+}
+
+.admin__institution-form .form-input {
+  width: 78px;
+}
+
+.admin__plan-note {
+  margin-top: 1rem;
+  color: var(--color-text-light);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+@media (max-width: 1100px) {
+  .admin__stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .admin__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin__users-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin__filters {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .admin__search {
+    flex: 1;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

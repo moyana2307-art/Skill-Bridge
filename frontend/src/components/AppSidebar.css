@@ -379,3 +379,21 @@
     border-top: 0;
   }
 }
+
+.app-sidebar__bell {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 8px 8px;
+}
+
+.app-sidebar--collapsed .app-sidebar__bell {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+@media (max-width: 960px) {
+  .app-sidebar--collapsed .app-sidebar__bell {
+    justify-content: flex-start;
+    padding-inline: 8px;
+  }
+}

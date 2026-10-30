@@ -76,6 +76,9 @@ function Navbar() {
           <NavLink to="/about" className={linkClass} onClick={closeMenu}>
             About
           </NavLink>
+          <NavLink to="/pricing" className={linkClass} onClick={closeMenu}>
+            Pricing
+          </NavLink>
           <NavLink
             to="/opportunities"
             className={linkClass}

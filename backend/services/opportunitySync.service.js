@@ -185,6 +185,7 @@ async function fetchRemotive() {
 
 async function upsertOpportunities(items, runAt) {
   let saved = 0;
+  const inserted = [];
 
   for (const item of items) {
     const values = COLUMNS.map((column) => {
@@ -199,17 +200,81 @@ async function upsertOpportunities(items, runAt) {
       .map((column) => `${column} = EXCLUDED.${column}`)
       .join(', ');
 
-    await pool.query(
+    const { rows } = await pool.query(
       `INSERT INTO opportunities (${COLUMNS.join(', ')})
        VALUES (${COLUMNS.map((_, index) => `$${index + 1}`).join(', ')})
-       ON CONFLICT (source_name, external_id) DO UPDATE SET ${updateClause}`,
+       ON CONFLICT (source_name, external_id) DO UPDATE SET ${updateClause}
+       RETURNING id, title, organisation, required_skills, (xmax = 0) AS inserted`,
       values
     );
 
+    if (rows[0]?.inserted) inserted.push(rows[0]);
     saved += 1;
   }
 
-  return saved;
+  return { saved, inserted };
+}
+
+function normalizeSkill(value) {
+  return String(value).toLowerCase().replace(/[^a-z0-9+#.]/g, '');
+}
+
+function parseRequiredSkills(value) {
+  if (!value) return [];
+  return String(value)
+    .split(/[,;|\n]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+// Tell learners about newly imported opportunities that match skills they
+// already have. Notifications are best-effort and never fail the sync.
+async function notifyMatchingUsers(inserted) {
+  if (!inserted.length) return 0;
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT us.user_id, s.name FROM user_skills us
+       JOIN skills s ON s.id = us.skill_id`
+    );
+
+    if (!rows.length) return 0;
+
+    const byUser = new Map();
+    for (const row of rows) {
+      if (!byUser.has(row.user_id)) byUser.set(row.user_id, new Set());
+      byUser.get(row.user_id).add(normalizeSkill(row.name));
+    }
+
+    const notificationsService = require('./notifications.service');
+    let sent = 0;
+
+    for (const opportunity of inserted) {
+      const required = parseRequiredSkills(opportunity.required_skills)
+        .map(normalizeSkill)
+        .filter(Boolean);
+      if (!required.length) continue;
+
+      const matchedUsers = [];
+      for (const [userId, skills] of byUser.entries()) {
+        if (required.some((skill) => skills.has(skill))) matchedUsers.push(userId);
+      }
+
+      sent += await notificationsService.notifyMany(matchedUsers, {
+        type: 'opportunity',
+        title: `New opportunity: ${opportunity.title}`,
+        body: opportunity.organisation
+          ? `${opportunity.organisation} posted a role that matches your skills.`
+          : 'A new listing matches skills on your profile.',
+        link: '/opportunities',
+      });
+    }
+
+    return sent;
+  } catch (err) {
+    console.error('[sync] could not create opportunity notifications:', err.message);
+    return 0;
+  }
 }
 
 let activeSync = null;
@@ -245,7 +310,7 @@ async function runSync() {
         continue;
       }
 
-      const saved = await upsertOpportunities(items, runAt);
+      const result = await upsertOpportunities(items, runAt);
       const deactivateResult = await pool.query(
         `UPDATE opportunities
          SET is_active = FALSE
@@ -255,11 +320,14 @@ async function runSync() {
         [provider.name, runAt]
       );
 
-      totalSaved += saved;
+      const notified = await notifyMatchingUsers(result.inserted);
+
+      totalSaved += result.saved;
       sources.push({
         name: provider.name,
         fetched: items.length,
-        saved,
+        saved: result.saved,
+        notified,
         deactivated: deactivateResult.rowCount,
       });
     } catch (err) {

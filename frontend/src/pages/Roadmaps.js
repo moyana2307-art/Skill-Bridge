@@ -11,6 +11,8 @@ import {
   X,
 } from 'lucide-react';
 import { aiApi, careerGoalsApi, roadmapsApi } from '../api/client';
+import PageHeader from '../components/PageHeader';
+import StatGrid from '../components/StatGrid';
 import './Roadmaps.css';
 
 const ROADMAP_STATUSES = ['active', 'completed', 'archived'];
@@ -434,28 +436,23 @@ function Roadmaps() {
 
   return (
     <div className="roadmaps">
-      <section className="roadmaps__hero">
-        <div className="container">
-          <span className="badge">Learning plans</span>
-          <h1>Learning roadmaps</h1>
-          <p className="roadmaps__intro">
-            Break a career goal into practical steps. Mark tasks as you start
-            and finish them so your progress stays visible.
-          </p>
-
-          <div className="roadmaps__stats" aria-label="Roadmap totals">
-            {statsCards.map((stat) => (
-              <div className="roadmaps__stat" key={stat.label}>
-                <strong>{listLoading ? '-' : stat.value}</strong>
-                <span>{stat.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Learning plans"
+        icon={Map}
+        title="Learning roadmaps"
+        description="Break a career goal into practical steps. Mark tasks as you start and finish them so your progress stays visible."
+      />
 
       <section className="section section--soft">
         <div className="container">
+          <StatGrid
+            ariaLabel="Roadmap totals"
+            items={statsCards.map((stat) => ({
+              ...stat,
+              value: listLoading ? '-' : stat.value,
+            }))}
+          />
+
           {success && (
             <div className="alert alert-success" role="status">
               {success}

@@ -1,5 +1,6 @@
 ﻿const { pool } = require('../config/db');
 const careerGoalsService = require('./careerGoals.service');
+const notificationsService = require('./notifications.service');
 
 const ROADMAP_SELECT = `SELECT r.id, r.user_id, r.career_goal_id, r.title, r.summary, r.status,
   r.created_at, r.updated_at, g.career_title,
@@ -27,7 +28,7 @@ async function listRoadmaps(userId, filters) {
   const conditions = ['r.user_id = $1']; const values = [userId];
   if (filters.status) { values.push(filters.status); conditions.push(`r.status = $${values.length}`); }
   if (filters.career_goal_id) { values.push(filters.career_goal_id); conditions.push(`r.career_goal_id = $${values.length}`); }
-  const { rows } = await pool.query(`${ROADMAP_SELECT} WHERE ${conditions.join(' AND')}
+  const { rows } = await pool.query(`${ROADMAP_SELECT} WHERE ${conditions.join(' AND ')}
     ORDER BY CASE r.status WHEN 'active' THEN 1 WHEN 'completed' THEN 2 WHEN 'archived' THEN 3 END,
     r.updated_at DESC, r.id DESC`, values);
   return rows.map(mapRoadmap);
@@ -51,7 +52,14 @@ async function createRoadmap(userId, data) {
   if (data.summary !== undefined) { columns.push('summary'); values.push(data.summary); }
   if (data.career_goal_id !== undefined) { columns.push('career_goal_id'); values.push(data.career_goal_id); }
   const { rows } = await pool.query(`INSERT INTO learning_roadmaps (${columns.join(', ')}) VALUES (${placeholders(values.length)}) RETURNING id`, values);
-  return { status: 'created', roadmap: await getRoadmapById(userId, rows[0].id) };
+  const roadmap = await getRoadmapById(userId, rows[0].id);
+  await notificationsService.notify(userId, {
+    type: 'roadmap',
+    title: 'Learning roadmap created',
+    body: `"${roadmap.title}" is ready. Start with the first task.`,
+    link: '/roadmaps',
+  });
+  return { status: 'created', roadmap };
 }
 
 async function updateRoadmap(userId, roadmapId, fields) {
@@ -120,7 +128,17 @@ async function updateTask(userId, roadmapId, taskId, fields) {
         WHERE id = $${values.length - 1} AND roadmap_id = $${values.length}`, values);
     }
     if (fields.status !== undefined && fields.status !== existing.status) await client.query(`INSERT INTO user_progress (user_id, roadmap_task_id, previous_status, new_status) VALUES ($1,$2,$3,$4)`, [userId, taskId, existing.status, fields.status]);
-    await client.query('COMMIT'); return getTaskForUser(userId, roadmapId, taskId);
+    await client.query('COMMIT');
+    const task = await getTaskForUser(userId, roadmapId, taskId);
+    if (fields.status === 'completed' && existing.status !== 'completed') {
+      await notificationsService.notify(userId, {
+        type: 'milestone',
+        title: 'Milestone completed',
+        body: `"${task.title}" is marked complete. Keep going.`,
+        link: '/roadmaps',
+      });
+    }
+    return task;
   } catch (err) { await client.query('ROLLBACK'); throw err; } finally { client.release(); }
 }
 
@@ -142,7 +160,15 @@ async function createRoadmapWithTasks(userId, data, tasks) {
       (roadmap_id,title,description,skills_to_develop,learning_activities,practical_project,resources,estimated_duration,sort_order,status)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [roadmapId, task.title, task.description ?? null, task.skills_to_develop ?? null,
       task.learning_activities ?? null, task.practical_project ?? null, task.resources ?? null, task.estimated_duration ?? null, task.sort_order ?? 0, task.status || 'not_started']);
-    await client.query('COMMIT'); return { status: 'created', roadmap: await getRoadmapById(userId, roadmapId) };
+    await client.query('COMMIT');
+    const roadmap = await getRoadmapById(userId, roadmapId);
+    await notificationsService.notify(userId, {
+      type: 'roadmap',
+      title: 'New learning roadmap ready',
+      body: `"${roadmap.title}" has ${tasks.length} tasks to work through.`,
+      link: '/roadmaps',
+    });
+    return { status: 'created', roadmap };
   } catch (err) { await client.query('ROLLBACK'); throw err; } finally { client.release(); }
 }
 

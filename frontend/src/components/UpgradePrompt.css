@@ -1,0 +1,60 @@
+.upgrade-prompt {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(16, 54, 125, 0.2);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-primary-lighter), #f8fbff);
+}
+
+.upgrade-prompt__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.upgrade-prompt__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.upgrade-prompt__text strong {
+  display: block;
+  color: var(--color-primary-dark);
+  font-size: 0.95rem;
+}
+
+.upgrade-prompt__text p {
+  margin: 2px 0 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.upgrade-prompt--compact {
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.upgrade-prompt--compact .upgrade-prompt__icon {
+  width: 34px;
+  height: 34px;
+}
+
+@media (max-width: 640px) {
+  .upgrade-prompt {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .upgrade-prompt .btn {
+    width: 100%;
+  }
+}

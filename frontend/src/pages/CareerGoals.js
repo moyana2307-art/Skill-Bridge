@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Map, Pencil, Plus, Target, Trash2, X } from 'lucide-react';
 import { careerGoalsApi } from '../api/client';
+import PageHeader from '../components/PageHeader';
+import StatGrid from '../components/StatGrid';
 import './CareerGoals.css';
 
 const EMPTY_FORM = { career_title: '', status: 'active' };
@@ -180,28 +182,23 @@ function CareerGoals() {
 
   return (
     <div className="goals">
-      <section className="goals__hero">
-        <div className="container">
-          <span className="badge">Career direction</span>
-          <h1>Career goals</h1>
-          <p className="goals__intro">
-            Name the roles you are working towards. Keep one goal active and
-            turn the others into completed milestones or archived ideas.
-          </p>
-
-          <div className="goals__stats" aria-label="Career goal totals">
-            {stats.map((stat) => (
-              <div className="goals__stat" key={stat.label}>
-                <strong>{loading ? '-' : stat.value}</strong>
-                <span>{stat.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Career direction"
+        icon={Target}
+        title="Career goals"
+        description="Name the roles you are working towards. Keep one goal active and turn the others into completed milestones or archived ideas."
+      />
 
       <section className="section section--soft">
         <div className="container">
+          <StatGrid
+            ariaLabel="Career goal totals"
+            items={stats.map((stat) => ({
+              ...stat,
+              value: loading ? '-' : stat.value,
+            }))}
+          />
+
           {success && (
             <div className="alert alert-success" role="status">
               {success}

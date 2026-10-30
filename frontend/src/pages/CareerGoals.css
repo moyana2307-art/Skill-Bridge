@@ -1,62 +1,5 @@
 /* Styles for the career goals page. */
 
-.goals__hero {
-  background: linear-gradient(
-    160deg,
-    var(--color-primary) 0%,
-    var(--color-primary-dark) 100%
-  );
-  color: #ffffff;
-  padding: 56px 0 48px;
-}
-
-.goals__hero h1 {
-  color: #ffffff;
-  margin: 14px 0 12px;
-}
-
-.goals__hero .badge {
-  background-color: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-}
-
-.goals__intro {
-  max-width: 720px;
-  color: #edf2f7;
-  font-size: 1.05rem;
-}
-
-.goals__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 26px;
-}
-
-.goals__stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 112px;
-  padding: 12px 18px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--radius-md);
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
-.goals__stat strong {
-  font-size: 1.5rem;
-  line-height: 1.1;
-}
-
-.goals__stat span {
-  color: #edf2f7;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
 .goals__layout {
   display: grid;
   grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.85fr);
@@ -339,17 +282,4 @@
   }
 }
 
-@media (max-width: 600px) {
-  .goals__hero {
-    padding: 40px 0 36px;
-  }
 
-  .goals__stats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .goals__stat {
-    min-width: 0;
-  }
-}

@@ -157,3 +157,20 @@
     opacity: 1;
   }
 }
+
+@media (max-width: 960px) {
+  .app-layout__mobile-bar {
+    gap: 10px;
+  }
+
+  .app-layout__mobile-brand {
+    margin-right: auto;
+    min-width: 0;
+  }
+
+  .app-layout__mobile-brand span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}

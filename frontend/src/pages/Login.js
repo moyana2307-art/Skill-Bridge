@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 function Login() {
   const { user, login } = useAuth();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/profile';
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');

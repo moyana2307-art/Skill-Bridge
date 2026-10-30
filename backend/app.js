@@ -8,11 +8,24 @@ const routes = require('./routes');
 const requestLogger = require('./middleware/requestLogger');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
+const { apiLimiter } = require('./middleware/rateLimit');
+const ApiError = require('./utils/ApiError');
 
 const app = express();
 
 // Do not advertise the framework.
 app.disable('x-powered-by');
+
+// Basic security headers. These are safe defaults for a JSON API and do not
+// require an extra dependency.
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  next();
+});
 
 // Behind a hosting proxy, trust its forwarded protocol so secure cookies work.
 if (env.nodeEnv === 'production') app.set('trust proxy', 1);
@@ -32,7 +45,7 @@ app.use(
         return callback(null, true);
       }
 
-      return callback(null, true);
+      return callback(ApiError.forbidden('That origin is not allowed to call this API'));
     },
     credentials: true,
   })
@@ -40,13 +53,27 @@ app.use(
 
 // Parse incoming request bodies so we can read req.body.
 app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '1mb',
+    verify(req, res, buffer) {
+      if (req.originalUrl && req.originalUrl.startsWith('/api/payments/webhook/')) {
+        req.rawBody = buffer.toString('utf8');
+      }
+    },
+  })
+);
 
 // Parse cookies so the auth middleware can read the httpOnly login token.
 app.use(cookieParser());
 
 // One log line per request.
 app.use(requestLogger);
+
+// A broad safety net in front of every API route. Individual route groups add
+// stricter limits for authentication and AI calls.
+app.use('/api', apiLimiter);
 
 // A small landing page so hitting the root URL in a browser is useful.
 app.get('/', (req, res) => {

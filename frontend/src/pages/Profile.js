@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { aiApi, profileApi } from '../api/client';
 import { getInitials, prepareAvatarFile } from '../utils/avatar';
+import PageHeader from '../components/PageHeader';
 import './Profile.css';
 
 const EMPTY_FORM = {
@@ -193,46 +194,52 @@ function Profile() {
     }
   };
 
+  const pageHeader = (
+    <PageHeader
+      eyebrow="Your account"
+      icon={UserRound}
+      title="Your profile"
+      description="Keep your details up to date so career guidance and opportunity matching fit your situation."
+    />
+  );
+
   if (loading) {
     return (
-      <section className="section section--soft">
-        <div className="container">
-          <div className="spinner" role="status" aria-label="Loading your profile" />
-        </div>
-      </section>
+      <div className="profile">
+        {pageHeader}
+        <section className="section section--soft">
+          <div className="container">
+            <div className="spinner" role="status" aria-label="Loading your profile" />
+          </div>
+        </section>
+      </div>
     );
   }
 
   if (error && !account) {
     return (
-      <section className="section section--soft">
-        <div className="container profile__narrow">
-          <div className="alert alert-error" role="alert">
-            {error}
+      <div className="profile">
+        {pageHeader}
+        <section className="section section--soft">
+          <div className="container profile__narrow">
+            <div className="alert alert-error" role="alert">
+              {error}
+            </div>
+            <button type="button" className="btn btn-primary" onClick={loadProfile}>
+              Try again
+            </button>
           </div>
-          <button type="button" className="btn btn-primary" onClick={loadProfile}>
-            Try again
-          </button>
-        </div>
-      </section>
+        </section>
+      </div>
     );
   }
 
   return (
-    <section className="section section--soft">
-      <div className="container">
-        <div className="profile__header">
-          <div>
-            <span className="badge">Your account</span>
-            <h1>Your profile</h1>
-            <p>
-              Keep your details up to date so career guidance and opportunity
-              matching fit your situation.
-            </p>
-          </div>
-        </div>
-
-        <div className="profile__grid">
+    <div className="profile">
+      {pageHeader}
+      <section className="section section--soft">
+        <div className="container">
+          <div className="profile__grid">
           <form className="card profile__form" onSubmit={handleSubmit} noValidate>
             <h2>Personal details</h2>
 
@@ -594,8 +601,9 @@ function Profile() {
             </div>
           )}
         </section>
-      </div>
-    </section>
+        </div>
+      </section>
+    </div>
   );
 }
 

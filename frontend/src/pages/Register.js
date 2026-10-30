@@ -20,7 +20,7 @@ function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   if (user) {
-    return <Navigate to="/profile" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleChange = (event) => {

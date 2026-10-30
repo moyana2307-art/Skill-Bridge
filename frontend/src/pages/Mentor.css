@@ -1,0 +1,257 @@
+.mentor__layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.6fr);
+  gap: 1.25rem;
+  min-height: 620px;
+}
+
+.mentor__sidebar {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  max-height: 72vh;
+}
+
+.mentor__new {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+.mentor__new .form-input {
+  min-width: 0;
+}
+
+.mentor__threads {
+  display: grid;
+  gap: 0.35rem;
+  overflow-y: auto;
+}
+
+.mentor__thread {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 10px;
+  transition: background 0.16s ease;
+}
+
+.mentor__thread:hover {
+  background: var(--color-cloud);
+}
+
+.mentor__thread--active {
+  background: var(--color-primary-lighter);
+}
+
+.mentor__thread-open {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.6rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mentor__thread-open strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mentor__thread-open small {
+  color: var(--color-text-light);
+  font-size: 0.72rem;
+}
+
+.mentor__thread-delete {
+  flex-shrink: 0;
+  padding: 0.45rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-light);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.mentor__thread:hover .mentor__thread-delete,
+.mentor__thread-delete:focus-visible {
+  opacity: 1;
+}
+
+.mentor__thread-delete:hover {
+  color: var(--color-error);
+  background: var(--color-error-soft);
+}
+
+.mentor__chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 620px;
+  max-height: 72vh;
+  padding: 0;
+  overflow: hidden;
+}
+
+.mentor__empty {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-text-light);
+}
+
+.mentor__empty svg {
+  color: var(--color-secondary);
+}
+
+.mentor__empty h2 {
+  margin: 0.6rem 0 0.35rem;
+  color: var(--color-text);
+}
+
+.mentor__empty p {
+  max-width: 340px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.mentor__chat-head {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mentor__chat-head h2 {
+  font-size: 1.05rem;
+}
+
+.mentor__chat-head p {
+  color: var(--color-text-light);
+  font-size: 0.76rem;
+}
+
+.mentor__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  background: var(--color-cloud);
+}
+
+.mentor__message {
+  max-width: 86%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.mentor__message--user {
+  align-self: flex-end;
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.mentor__message--assistant {
+  align-self: flex-start;
+}
+
+.mentor__role {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--color-text-light);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mentor__message--user .mentor__role {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.mentor__message p {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.mentor__typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-light);
+}
+
+.mentor__spin {
+  animation: mentor-spin 1s linear infinite;
+}
+
+@keyframes mentor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mentor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.75rem 1.25rem 0;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.mentor__action {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-cloud);
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.mentor__action:hover {
+  border-color: var(--color-secondary);
+  background: var(--color-primary-lighter);
+}
+
+.mentor__composer {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  padding: 0.9rem 1.25rem 1.1rem;
+  background: var(--color-surface);
+}
+
+.mentor__composer .form-textarea {
+  resize: none;
+}
+
+@media (max-width: 900px) {
+  .mentor__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .mentor__sidebar {
+    max-height: 260px;
+  }
+
+  .mentor__chat {
+    min-height: 520px;
+    max-height: none;
+  }
+}

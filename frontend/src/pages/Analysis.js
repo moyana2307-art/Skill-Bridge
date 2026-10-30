@@ -9,6 +9,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { aiApi, careerGoalsApi } from '../api/client';
+import PageHeader from '../components/PageHeader';
 import './Analysis.css';
 
 const INITIAL_FORM = {
@@ -118,18 +119,12 @@ function Analysis() {
 
   return (
     <div className="analysis">
-      <section className="analysis__hero">
-        <div className="container">
-          <span className="badge">
-            <Sparkles size={14} /> AI career coach
-          </span>
-          <h1>Skills-gap analysis</h1>
-          <p className="analysis__intro">
-            See how ready you are for a target role, which skills to close next,
-            and a practical plan based on your real profile and skills.
-          </p>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="AI career coach"
+        icon={Sparkles}
+        title="Skills-gap analysis"
+        description="See how ready you are for a target role, which skills to close next, and a practical plan based on your real profile and skills."
+      />
 
       <section className="section section--soft">
         <div className="container analysis__layout">

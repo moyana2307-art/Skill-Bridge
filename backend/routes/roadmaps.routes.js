@@ -14,6 +14,7 @@ const roadmapsController = require('../controllers/roadmaps.controller');
 const asyncHandler = require('../middleware/asyncHandler');
 const requireAuth = require('../middleware/requireAuth');
 const validate = require('../middleware/validate');
+const requireFeature = require('../middleware/requireFeature');
 const {
   createRoadmapBody,
   updateRoadmapBody,
@@ -35,6 +36,7 @@ router.get(
 );
 router.post(
   '/',
+  requireFeature('roadmaps'),
   validate({ body: createRoadmapBody }),
   asyncHandler(roadmapsController.create)
 );

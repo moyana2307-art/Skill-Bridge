@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import AppSidebar from '../components/AppSidebar';
+import NotificationBell from '../components/NotificationBell';
 import { useAuth } from '../context/AuthContext';
 import { getInitials } from '../utils/avatar';
 import './AppLayout.css';
@@ -92,7 +93,7 @@ function AppLayout() {
             <Menu size={23} aria-hidden="true" />
           </button>
 
-          <Link to="/profile" className="app-layout__mobile-brand">
+          <Link to="/dashboard" className="app-layout__mobile-brand">
             <img
               src={`${process.env.PUBLIC_URL}/brand-logo.png`}
               alt=""
@@ -102,6 +103,8 @@ function AppLayout() {
               SkillBridge <strong>AI</strong>
             </span>
           </Link>
+
+          <NotificationBell compact />
 
           <Link
             to="/profile"

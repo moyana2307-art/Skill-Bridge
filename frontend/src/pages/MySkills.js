@@ -9,6 +9,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { metaApi, skillsApi, userSkillsApi } from '../api/client';
+import PageHeader from '../components/PageHeader';
+import StatGrid from '../components/StatGrid';
 import './MySkills.css';
 
 const PROFICIENCY_LEVELS = ['beginner', 'intermediate', 'advanced'];
@@ -240,28 +242,23 @@ function MySkills() {
 
   return (
     <div className="my-skills">
-      <section className="my-skills__hero">
-        <div className="container">
-          <span className="badge">Skills profile</span>
-          <h1>Your skills</h1>
-          <p className="my-skills__intro">
-            Add the skills you already have and mark your confidence in each
-            one. Career guidance and opportunity matching use this list later.
-          </p>
-
-          <div className="my-skills__stats" aria-label="Skill totals">
-            {stats.map((stat) => (
-              <div className="my-skills__stat" key={stat.label}>
-                <strong>{myLoading ? '-' : stat.value}</strong>
-                <span>{stat.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Skills profile"
+        icon={Layers}
+        title="Your skills"
+        description="Add the skills you already have and mark your confidence in each one. Career guidance and opportunity matching use this list later."
+      />
 
       <section className="section section--soft">
         <div className="container">
+          <StatGrid
+            ariaLabel="Skill totals"
+            items={stats.map((stat) => ({
+              ...stat,
+              value: myLoading ? '-' : stat.value,
+            }))}
+          />
+
           {success && (
             <div className="alert alert-success" role="status">
               {success}

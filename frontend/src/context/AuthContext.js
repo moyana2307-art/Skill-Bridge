@@ -6,23 +6,37 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { authApi } from '../api/client';
+import { authApi, subscriptionsApi } from '../api/client';
 
 const AuthContext = createContext(null);
 
-// Holds the logged-in user for the whole app. On a page reload it asks the
-// backend who is logged in using the httpOnly cookie.
+// Holds the logged-in user and their plan entitlements for the whole app.
+// On a page reload it asks the backend who is logged in using the httpOnly
+// cookie.
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [entitlements, setEntitlements] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshEntitlements = useCallback(async () => {
+    try {
+      const response = await subscriptionsApi.me();
+      setEntitlements(response.data.entitlements);
+      return response.data.entitlements;
+    } catch (err) {
+      return null;
+    }
+  }, []);
 
   const refreshUser = useCallback(async () => {
     try {
       const response = await authApi.me();
       setUser(response.data.user);
+      setEntitlements(response.data.entitlements || null);
       return response.data.user;
     } catch (err) {
       setUser(null);
+      setEntitlements(null);
       return null;
     }
   }, []);
@@ -33,10 +47,14 @@ export function AuthProvider({ children }) {
     authApi
       .me()
       .then((response) => {
-        if (active) setUser(response.data.user);
+        if (!active) return;
+        setUser(response.data.user);
+        setEntitlements(response.data.entitlements || null);
       })
       .catch(() => {
-        if (active) setUser(null);
+        if (!active) return;
+        setUser(null);
+        setEntitlements(null);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -50,12 +68,14 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (credentials) => {
     const response = await authApi.login(credentials);
     setUser(response.data.user);
+    setEntitlements(response.data.entitlements || null);
     return response.data.user;
   }, []);
 
   const register = useCallback(async (details) => {
     const response = await authApi.register(details);
     setUser(response.data.user);
+    setEntitlements(response.data.entitlements || null);
     return response.data.user;
   }, []);
 
@@ -67,6 +87,7 @@ export function AuthProvider({ children }) {
       // will either be cleared by the server or expire on its own.
     } finally {
       setUser(null);
+      setEntitlements(null);
     }
   }, []);
 
@@ -75,8 +96,28 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, updateUser, refreshUser }),
-    [user, loading, login, register, logout, updateUser, refreshUser]
+    () => ({
+      user,
+      entitlements,
+      loading,
+      login,
+      register,
+      logout,
+      updateUser,
+      refreshUser,
+      refreshEntitlements,
+    }),
+    [
+      user,
+      entitlements,
+      loading,
+      login,
+      register,
+      logout,
+      updateUser,
+      refreshUser,
+      refreshEntitlements,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

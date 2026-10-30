@@ -1,11 +1,20 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import {
+  BarChart3,
+  Bell,
   BrainCircuit,
+  Building2,
+  CreditCard,
   Compass,
+  FileText,
+  FolderKanban,
+  LayoutDashboard,
   LogOut,
   Map,
+  MessageCircle,
   PanelLeftClose,
   PanelLeftOpen,
+  ShieldCheck,
   Sparkles,
   Target,
   UserRound,
@@ -13,12 +22,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getInitials } from '../utils/avatar';
+import NotificationBell from './NotificationBell';
 import './AppSidebar.css';
 
 const NAV_GROUPS = [
   {
     label: 'Your space',
     items: [
+      { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/profile', label: 'Profile', icon: UserRound },
       { to: '/skills', label: 'Skills', icon: Sparkles },
       { to: '/goals', label: 'Career goals', icon: Target },
@@ -28,8 +39,28 @@ const NAV_GROUPS = [
     label: 'Plan and grow',
     items: [
       { to: '/analysis', label: 'AI analysis', icon: BrainCircuit },
+      { to: '/career', label: 'Career intelligence', icon: Compass },
       { to: '/roadmaps', label: 'Roadmaps', icon: Map },
       { to: '/opportunities', label: 'Opportunities', icon: Compass },
+    ],
+  },
+  {
+    label: 'Get hired',
+    items: [
+      { to: '/mentor', label: 'AI mentor', icon: MessageCircle },
+      { to: '/career-studio', label: 'Career studio', icon: FileText },
+      { to: '/applications', label: 'Applications', icon: FileText },
+      { to: '/projects', label: 'Projects', icon: FolderKanban },
+      { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [
+      { to: '/notifications', label: 'Notifications', icon: Bell },
+      { to: '/billing', label: 'Plan and billing', icon: CreditCard },
+      { to: '/institution', label: 'Institution', icon: Building2 },
+      { to: '/admin', label: 'Admin', icon: ShieldCheck, adminOnly: true },
     ],
   },
 ];
@@ -57,7 +88,7 @@ function AppSidebar({
       aria-label="Workspace navigation"
     >
       <div className="app-sidebar__top">
-        <Link to="/profile" className="app-sidebar__brand" onClick={onClose}>
+        <Link to="/dashboard" className="app-sidebar__brand" onClick={onClose}>
           <span className="app-sidebar__logo-wrap">
             <img
               src={`${process.env.PUBLIC_URL}/brand-logo.png`}
@@ -95,40 +126,52 @@ function AppSidebar({
       </div>
 
       <nav className="app-sidebar__nav">
-        {NAV_GROUPS.map((group) => (
-          <div className="app-sidebar__group" key={group.label}>
-            <p className="app-sidebar__group-label">{group.label}</p>
-            {group.items.map((item) => {
-              const Icon = item.icon;
+        {NAV_GROUPS.map((group) => {
+          const items = group.items.filter(
+            (item) => !item.adminOnly || user?.role === 'admin'
+          );
 
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `app-sidebar__link ${
-                      isActive ? 'app-sidebar__link--active' : ''
-                    }`
-                  }
-                  onClick={onClose}
-                  title={collapsed ? item.label : undefined}
-                  aria-label={collapsed ? item.label : undefined}
-                >
-                  <Icon
-                    size={20}
-                    strokeWidth={1.9}
-                    aria-hidden="true"
-                    className="app-sidebar__icon"
-                  />
-                  <span className="app-sidebar__label">{item.label}</span>
-                </NavLink>
-              );
-            })}
-          </div>
-        ))}
+          if (!items.length) return null;
+
+          return (
+            <div className="app-sidebar__group" key={group.label}>
+              <p className="app-sidebar__group-label">{group.label}</p>
+              {items.map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `app-sidebar__link ${
+                        isActive ? 'app-sidebar__link--active' : ''
+                      }`
+                    }
+                    onClick={onClose}
+                    title={collapsed ? item.label : undefined}
+                    aria-label={collapsed ? item.label : undefined}
+                  >
+                    <Icon
+                      size={20}
+                      strokeWidth={1.9}
+                      aria-hidden="true"
+                      className="app-sidebar__icon"
+                    />
+                    <span className="app-sidebar__label">{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </div>
+          );
+        })}
       </nav>
 
       <div className="app-sidebar__footer">
+        <div className="app-sidebar__bell">
+          <NotificationBell compact={collapsed} onNavigate={onClose} />
+        </div>
+
         <Link
           to="/profile"
           className="app-sidebar__user"
@@ -148,7 +191,7 @@ function AppSidebar({
           </span>
           <span className="app-sidebar__user-text">
             <strong>{user?.name || 'Your profile'}</strong>
-            <span>{user?.role === 'admin' ? 'Administrator' : 'Member'}</span>
+            <span>{user?.role === 'admin' ? 'Administrator' : 'User'}</span>
           </span>
         </Link>
 
@@ -168,3 +211,4 @@ function AppSidebar({
 }
 
 export default AppSidebar;
+
