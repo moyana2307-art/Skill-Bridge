@@ -1,23 +1,45 @@
 .placeholder__card {
-  max-width: 560px;
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  max-width: 620px;
   margin: 0 auto;
+  padding: 2.5rem;
   text-align: center;
-  padding: 56px 32px;
 }
 
 .placeholder__icon {
-  color: var(--color-warning);
-  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-primary-lighter);
+  color: var(--color-primary);
 }
 
-.placeholder__card h1 {
-  font-size: 1.7rem;
-  margin-bottom: 12px;
+.placeholder__card h2 {
+  margin: 0;
+  font-size: 1.2rem;
 }
 
 .placeholder__card p {
-  margin-bottom: 24px;
-  max-width: 420px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 440px;
+  margin: 0;
+  color: var(--color-text-light);
+  line-height: 1.6;
+}
+
+.placeholder__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 600px) {
+  .placeholder__card {
+    padding: 1.75rem;
+  }
 }

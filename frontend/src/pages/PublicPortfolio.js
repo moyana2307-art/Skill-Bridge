@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { portfolioApi } from '../api/client';
 import { formatDate, titleCase } from '../utils/format';
+import PageHeader from '../components/PageHeader';
 import './PublicPortfolio.css';
 
 function PublicPortfolio() {
@@ -41,27 +42,42 @@ function PublicPortfolio() {
 
   if (loading) {
     return (
-      <section className="section">
-        <div className="container">
-          <div className="spinner" role="status" aria-label="Loading portfolio" />
-        </div>
-      </section>
+      <div className="public-portfolio">
+        <PageHeader
+          eyebrow="Public portfolio"
+          icon={Sparkles}
+          title="Loading portfolio"
+          description="Fetching this SkillBridge AI portfolio."
+        />
+        <section className="section section--soft">
+          <div className="container">
+            <div className="spinner" role="status" aria-label="Loading portfolio" />
+          </div>
+        </section>
+      </div>
     );
   }
 
   if (error || !portfolio) {
     return (
-      <section className="section">
-        <div className="container">
-          <div className="card public-portfolio__missing">
-            <h1>Portfolio not available</h1>
-            <p>{error || 'This portfolio is private or does not exist.'}</p>
-            <Link to="/" className="btn btn-primary">
-              Back to SkillBridge AI
-            </Link>
+      <div className="public-portfolio">
+        <PageHeader
+          eyebrow="Public portfolio"
+          icon={Sparkles}
+          title="Portfolio not available"
+          description={error || 'This portfolio is private or does not exist.'}
+        />
+        <section className="section section--soft">
+          <div className="container">
+            <div className="card public-portfolio__missing">
+              <p>Check the link, or ask the owner to share their portfolio again.</p>
+              <Link to="/" className="btn btn-primary">
+                Back to SkillBridge AI
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     );
   }
 
@@ -74,8 +90,12 @@ function PublicPortfolio() {
 
   return (
     <div className="public-portfolio">
-      <section className="public-portfolio__hero">
-        <div className="container public-portfolio__hero-inner">
+      <PageHeader
+        eyebrow="SkillBridge AI portfolio"
+        icon={Sparkles}
+        title={portfolio.name}
+        description={portfolio.headline}
+        actions={
           <div className="public-portfolio__avatar" aria-hidden="true">
             {portfolio.avatar ? (
               <img src={portfolio.avatar} alt="" />
@@ -87,132 +107,144 @@ function PublicPortfolio() {
                 .join('')
             )}
           </div>
+        }
+      />
 
-          <div className="public-portfolio__intro">
-            <span className="badge">
-              <Sparkles size={14} /> SkillBridge AI portfolio
-            </span>
-            <h1>{portfolio.name}</h1>
-            {portfolio.headline && <p className="public-portfolio__headline">{portfolio.headline}</p>}
-
-            <div className="public-portfolio__meta">
-              {portfolio.location && (
-                <span>
-                  <MapPin size={14} /> {portfolio.location}
-                </span>
-              )}
-              {portfolio.education_level && (
-                <span>
-                  <GraduationCap size={14} /> {titleCase(portfolio.education_level)}
-                </span>
-              )}
-              {portfolio.joined_at && <span>Joined {formatDate(portfolio.joined_at)}</span>}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container public-portfolio__layout">
-          <div className="public-portfolio__main">
-            {portfolio.about && (
-              <article className="card">
-                <h2>About</h2>
-                <p className="public-portfolio__about">{portfolio.about}</p>
-              </article>
+      <section className="section section--soft">
+        <div className="container">
+          <div className="public-portfolio__meta">
+            {portfolio.location && (
+              <span>
+                <MapPin size={14} aria-hidden="true" /> {portfolio.location}
+              </span>
             )}
-
-            <article className="card">
-              <h2>Projects</h2>
-              {portfolio.projects?.length ? (
-                <div className="public-portfolio__projects">
-                  {portfolio.projects.map((project) => (
-                    <div className="public-portfolio__project" key={project.id}>
-                      <div className="public-portfolio__project-head">
-                        <h3>{project.title}</h3>
-                        <span className={`status-badge status-badge--${project.status}`}>
-                          {titleCase(project.status)}
-                        </span>
-                      </div>
-                      {project.description && <p>{project.description}</p>}
-                      {project.skills && (
-                        <div className="public-portfolio__tags">
-                          {String(project.skills)
-                            .split(',')
-                            .map((skill) => (
-                              <span key={skill.trim()}>{skill.trim()}</span>
-                            ))}
-                        </div>
-                      )}
-                      <div className="public-portfolio__links">
-                        {project.repo_url && (
-                          <a href={project.repo_url} target="_blank" rel="noreferrer">
-                            <ExternalLink size={13} /> Repository
-                          </a>
-                        )}
-                        {project.live_url && (
-                          <a href={project.live_url} target="_blank" rel="noreferrer">
-                            <ExternalLink size={13} /> Live project
-                          </a>
-                        )}
-                        {project.score != null && <span>AI score {project.score}/100</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="empty-state">No public projects yet.</p>
-              )}
-            </article>
+            {portfolio.education_level && (
+              <span>
+                <GraduationCap size={14} aria-hidden="true" />{' '}
+                {titleCase(portfolio.education_level)}
+              </span>
+            )}
+            {portfolio.joined_at && (
+              <span>Joined {formatDate(portfolio.joined_at)}</span>
+            )}
           </div>
 
-          <aside className="public-portfolio__aside">
-            <article className="card">
-              <h2>Skills</h2>
-              {Object.keys(skillsByCategory).length ? (
-                Object.entries(skillsByCategory).map(([category, skills]) => (
-                  <div className="public-portfolio__skill-group" key={category}>
-                    <h3>{titleCase(category)}</h3>
-                    <div className="public-portfolio__tags">
-                      {skills.map((skill) => (
-                        <span key={skill.name} title={titleCase(skill.proficiency)}>
-                          {skill.name}
-                        </span>
-                      ))}
-                    </div>
+          <div className="public-portfolio__layout">
+            <div className="public-portfolio__main">
+              {portfolio.about && (
+                <article className="card">
+                  <h2>About</h2>
+                  <p className="public-portfolio__about">{portfolio.about}</p>
+                </article>
+              )}
+
+              <article className="card">
+                <h2>Projects</h2>
+                {portfolio.projects?.length ? (
+                  <div className="public-portfolio__projects">
+                    {portfolio.projects.map((project) => (
+                      <div className="public-portfolio__project" key={project.id}>
+                        <div className="public-portfolio__project-head">
+                          <h3>{project.title}</h3>
+                          <span
+                            className={`status-badge status-badge--${project.status}`}
+                          >
+                            {titleCase(project.status)}
+                          </span>
+                        </div>
+                        {project.description && <p>{project.description}</p>}
+                        {project.skills && (
+                          <div className="public-portfolio__tags">
+                            {String(project.skills)
+                              .split(',')
+                              .map((skill) => (
+                                <span key={skill.trim()}>{skill.trim()}</span>
+                              ))}
+                          </div>
+                        )}
+                        <div className="public-portfolio__links">
+                          {project.repo_url && (
+                            <a
+                              href={project.repo_url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <ExternalLink size={13} /> Repository
+                            </a>
+                          )}
+                          {project.live_url && (
+                            <a
+                              href={project.live_url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <ExternalLink size={13} /> Live project
+                            </a>
+                          )}
+                          {project.score != null && (
+                            <span>AI score {project.score}/100</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))
-              ) : (
-                <p className="empty-state">No skills listed yet.</p>
-              )}
-            </article>
+                ) : (
+                  <p className="empty-state">No public projects yet.</p>
+                )}
+              </article>
+            </div>
 
-            <article className="card">
-              <h2>Focus</h2>
-              {portfolio.goals?.length ? (
-                <ul className="public-portfolio__goals">
-                  {portfolio.goals.map((goal) => (
-                    <li key={goal.career_title}>
-                      <Target size={15} />
-                      <span>
-                        {goal.career_title}
-                        <small>{titleCase(goal.status)}</small>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="empty-state">No career goals listed.</p>
-              )}
+            <aside className="public-portfolio__aside">
+              <article className="card">
+                <h2>Skills</h2>
+                {Object.keys(skillsByCategory).length ? (
+                  Object.entries(skillsByCategory).map(([category, skills]) => (
+                    <div className="public-portfolio__skill-group" key={category}>
+                      <h3>{titleCase(category)}</h3>
+                      <div className="public-portfolio__tags">
+                        {skills.map((skill) => (
+                          <span
+                            key={skill.name}
+                            title={titleCase(skill.proficiency)}
+                          >
+                            {skill.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="empty-state">No skills listed yet.</p>
+                )}
+              </article>
 
-              {portfolio.roadmaps?.total > 0 && (
-                <p className="public-portfolio__roadmaps">
-                  <FolderKanban size={15} /> {portfolio.roadmaps.completed} of{' '}
-                  {portfolio.roadmaps.total} learning roadmaps completed
-                </p>
-              )}
-            </article>
-          </aside>
+              <article className="card">
+                <h2>Focus</h2>
+                {portfolio.goals?.length ? (
+                  <ul className="public-portfolio__goals">
+                    {portfolio.goals.map((goal) => (
+                      <li key={goal.career_title}>
+                        <Target size={15} />
+                        <span>
+                          {goal.career_title}
+                          <small>{titleCase(goal.status)}</small>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="empty-state">No career goals listed.</p>
+                )}
+
+                {portfolio.roadmaps?.total > 0 && (
+                  <p className="public-portfolio__roadmaps">
+                    <FolderKanban size={15} /> {portfolio.roadmaps.completed} of{' '}
+                    {portfolio.roadmaps.total} learning roadmaps completed
+                  </p>
+                )}
+              </article>
+            </aside>
+          </div>
         </div>
       </section>
     </div>

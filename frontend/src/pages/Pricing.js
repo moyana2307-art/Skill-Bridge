@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { subscriptionsApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import PageHeader from '../components/PageHeader';
 import './Pricing.css';
 
 function formatPrice(cents, currency = 'USD', interval = 'month') {
@@ -44,37 +45,34 @@ function Pricing() {
 
   return (
     <div className="pricing">
-      <section className="pricing__hero">
-        <div className="container pricing__hero-inner">
-          <span className="badge">
-            <Sparkles size={14} /> Simple, student-friendly pricing
-          </span>
-          <h1>Start free. Upgrade when you are ready to go further.</h1>
-          <p>
-            Build your profile, explore careers, and create one roadmap for free.
-            Upgrade for the AI mentor, CV builder, interview practice, and
-            advanced analytics.
-          </p>
-          <div className="pricing__hero-actions">
+      <PageHeader
+        eyebrow="Simple, student-friendly pricing"
+        icon={Sparkles}
+        title="Start free. Upgrade when you are ready to go further."
+        description="Build your profile, explore careers, and create one roadmap for free. Upgrade for the AI mentor, CV builder, interview practice, and advanced analytics."
+        actions={
+          <>
             {user ? (
-              <Link to="/billing" className="btn btn-primary btn-lg">
-                Manage your plan <ArrowRight size={18} />
+              <Link to="/billing" className="btn btn-primary">
+                Manage your plan <ArrowRight size={18} aria-hidden="true" />
               </Link>
             ) : (
-              <Link to="/register" className="btn btn-primary btn-lg">
-                Create a free account <ArrowRight size={18} />
+              <Link to="/register" className="btn btn-primary">
+                Create a free account <ArrowRight size={18} aria-hidden="true" />
               </Link>
             )}
-            <a href="#institutions" className="btn btn-outline btn-lg">
-              <Building2 size={18} /> For institutions
+            <a href="#institutions" className="btn btn-outline">
+              <Building2 size={18} aria-hidden="true" /> For institutions
             </a>
-          </div>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       <section className="section section--soft">
         <div className="container">
-          {loading && <div className="spinner" role="status" aria-label="Loading plans" />}
+          {loading && (
+            <div className="spinner" role="status" aria-label="Loading plans" />
+          )}
           {error && <div className="alert alert-error">{error}</div>}
 
           {!loading && !error && (
@@ -93,32 +91,42 @@ function Pricing() {
                     <header>
                       <span className="pricing__plan-icon">
                         {plan.code === 'premium' ? (
-                          <Crown size={20} />
+                          <Crown size={20} aria-hidden="true" />
                         ) : plan.code === 'plus' ? (
-                          <Sparkles size={20} />
+                          <Sparkles size={20} aria-hidden="true" />
                         ) : (
-                          <GraduationCap size={20} />
+                          <GraduationCap size={20} aria-hidden="true" />
                         )}
                       </span>
                       <h2>{plan.name}</h2>
                       <p>{plan.description}</p>
                     </header>
                     <div className="pricing__price">
-                      {formatPrice(plan.price_cents, plan.currency, plan.billing_interval)}
+                      {formatPrice(
+                        plan.price_cents,
+                        plan.currency,
+                        plan.billing_interval
+                      )}
                     </div>
                     <ul className="pricing__features">
                       {(plan.feature_list || []).map((feature) => (
                         <li key={feature}>
-                          <Check size={16} /> {feature}
+                          <Check size={16} aria-hidden="true" /> {feature}
                         </li>
                       ))}
                     </ul>
                     {plan.code === 'free' ? (
-                      <Link to={user ? '/dashboard' : '/register'} className="btn btn-outline btn-block">
+                      <Link
+                        to={user ? '/dashboard' : '/register'}
+                        className="btn btn-outline btn-block"
+                      >
                         {user ? 'Go to dashboard' : 'Start free'}
                       </Link>
                     ) : (
-                      <Link to={user ? '/billing' : '/register'} className="btn btn-primary btn-block">
+                      <Link
+                        to={user ? '/billing' : '/register'}
+                        className="btn btn-primary btn-block"
+                      >
                         {user ? `Choose ${plan.name}` : 'Get started'}
                       </Link>
                     )}
@@ -143,7 +151,7 @@ function Pricing() {
         <div className="container">
           <div className="pricing__section-head">
             <span className="badge">
-              <Building2 size={14} /> Institutions
+              <Building2 size={14} aria-hidden="true" /> Institutions
             </span>
             <h2>Give every student the same career advantage</h2>
             <p>
@@ -163,13 +171,15 @@ function Pricing() {
                 <p>{pack.seat_limit} student seats included</p>
                 <ul className="pricing__features">
                   <li>
-                    <Check size={16} /> Bulk member management
+                    <Check size={16} aria-hidden="true" /> Bulk member management
                   </li>
                   <li>
-                    <Check size={16} /> Student progress dashboard
+                    <Check size={16} aria-hidden="true" /> Student progress
+                    dashboard
                   </li>
                   <li>
-                    <Check size={16} /> All Premium features for students
+                    <Check size={16} aria-hidden="true" /> All Premium features
+                    for students
                   </li>
                 </ul>
                 <Link

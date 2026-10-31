@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { opportunitiesApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import PageHeader from '../components/PageHeader';
 import './Home.css';
 
 const PREVIEW_LIMIT = 3;
@@ -95,6 +96,24 @@ const STEPS = [
   },
 ];
 
+const MOVES = [
+  {
+    number: '01',
+    title: 'Understand the gap',
+    text: 'See how your current skills compare with your target role.',
+  },
+  {
+    number: '02',
+    title: 'Build the right skills',
+    text: 'Follow a roadmap with practical steps and projects.',
+  },
+  {
+    number: '03',
+    title: 'Find the right opening',
+    text: 'Explore real opportunities that fit the direction you are building.',
+  },
+];
+
 function formatDeadline(value) {
   if (!value) return 'Deadline not listed';
 
@@ -116,7 +135,7 @@ function OpportunityPreviewCard({ opportunity }) {
   const TypeIcon = type.Icon;
 
   return (
-    <article className="home-opportunity">
+    <article className="card home-opportunity">
       <div className="home-opportunity__top">
         <span
           className={`home-opportunity__type home-opportunity__type--${opportunity.opportunity_type}`}
@@ -194,99 +213,74 @@ function Home() {
 
   return (
     <div className="home">
-      <section className="home-hero">
-        <div className="container home-hero__inner">
-          <div className="home-hero__content">
-            <span className="home-eyebrow">
-              <Sparkles size={15} aria-hidden="true" />
-              AI career guidance for Zimbabwe
-            </span>
+      <PageHeader
+        eyebrow="AI career guidance for Zimbabwe"
+        icon={Sparkles}
+        title={
+          <>
+            Build skills.{' '}
+            <span className="home-hero__highlight">Unlock opportunities.</span>
+          </>
+        }
+        description="Turn your profile into a clear skills plan, a practical learning roadmap, and relevant opportunities - so you always know what to do next."
+        actions={
+          <>
+            <Link to={workspaceAction.to} className="btn btn-primary">
+              {workspaceAction.label}
+              <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+            <Link to="/opportunities" className="btn btn-outline">
+              Explore opportunities
+            </Link>
+          </>
+        }
+      />
 
-            <h1>
-              Build skills. <span className="home-hero__highlight">Unlock opportunities.</span>
-            </h1>
-
-            <p className="home-hero__subtitle">
-              Turn your profile into a clear skills plan, a practical learning
-              roadmap, and relevant opportunities - so you always know what to
-              do next.
+      <section className="section section--soft">
+        <div className="container home-intro">
+          <div className="home-intro__copy">
+            <span className="home-eyebrow">Start here</span>
+            <h2>Your next three moves</h2>
+            <p>
+              A simple way to turn a career goal into action. No endless course
+              lists, no guessing what to do first.
             </p>
-
-            <div className="home-hero__actions">
-              <Link to={workspaceAction.to} className="btn btn-primary btn-lg">
-                {workspaceAction.label}
-                <ArrowRight size={18} aria-hidden="true" />
-              </Link>
-              <Link to="/opportunities" className="btn btn-outline btn-lg">
-                Explore opportunities
-              </Link>
-            </div>
-
-            <div className="home-hero__note">
+            <p className="home-intro__note">
               <CheckCircle2 size={18} aria-hidden="true" />
               <span>
                 Free to use. Clear guidance, not guarantees. Built for students,
                 graduates, and self-learners.
               </span>
-            </div>
+            </p>
           </div>
 
-          <aside className="home-hero__panel" aria-label="Example SkillBridge guidance plan">
-            <div className="home-hero__panel-top">
-              <span className="home-hero__panel-label">
+          <aside className="card home-panel" aria-label="Example SkillBridge guidance plan">
+            <div className="home-panel__top">
+              <span className="home-panel__label">
                 <Sparkles size={14} aria-hidden="true" />
                 Example guidance plan
               </span>
-              <span className="home-hero__panel-status">Clear next steps</span>
+              <span className="home-panel__status">Clear next steps</span>
             </div>
 
-            <p className="home-hero__panel-title">Your next three moves</p>
-            <p className="home-hero__panel-subtitle">
-              A simple way to turn a career goal into action.
-            </p>
-
-            <div className="home-hero__moves">
-              <div className="home-hero__move">
-                <span className="home-hero__move-number">01</span>
-                <div>
-                  <strong>Understand the gap</strong>
-                  <p>See how your current skills compare with your target role.</p>
+            <div className="home-panel__moves">
+              {MOVES.map((move) => (
+                <div className="home-panel__move" key={move.number}>
+                  <span className="home-panel__move-number">{move.number}</span>
+                  <div>
+                    <strong>{move.title}</strong>
+                    <p>{move.text}</p>
+                  </div>
+                  <CheckCircle2
+                    size={18}
+                    className="home-panel__move-check"
+                    aria-hidden="true"
+                  />
                 </div>
-                <CheckCircle2
-                  size={18}
-                  className="home-hero__move-check"
-                  aria-hidden="true"
-                />
-              </div>
-
-              <div className="home-hero__move">
-                <span className="home-hero__move-number">02</span>
-                <div>
-                  <strong>Build the right skills</strong>
-                  <p>Follow a roadmap with practical steps and projects.</p>
-                </div>
-                <CheckCircle2
-                  size={18}
-                  className="home-hero__move-check"
-                  aria-hidden="true"
-                />
-              </div>
-
-              <div className="home-hero__move">
-                <span className="home-hero__move-number">03</span>
-                <div>
-                  <strong>Find the right opening</strong>
-                  <p>Explore real opportunities that fit the direction you are building.</p>
-                </div>
-                <CheckCircle2
-                  size={18}
-                  className="home-hero__move-check"
-                  aria-hidden="true"
-                />
-              </div>
+              ))}
             </div>
 
-            <p className="home-hero__panel-foot">
+            <p className="home-panel__foot">
               <ShieldCheck size={16} aria-hidden="true" />
               Guidance only. You make the final decision.
             </p>
@@ -294,7 +288,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="home-section home-direction">
+      <section className="section home-direction">
         <div className="container home-direction__grid">
           <div className="home-direction__intro">
             <span className="home-eyebrow">Why it feels hard</span>
@@ -307,7 +301,7 @@ function Home() {
           </div>
 
           <div className="home-direction__points">
-            <article className="home-direction__point">
+            <article className="card home-direction__point">
               <span className="home-direction__icon">
                 <Search size={22} aria-hidden="true" />
               </span>
@@ -320,7 +314,7 @@ function Home() {
               </div>
             </article>
 
-            <article className="home-direction__point">
+            <article className="card home-direction__point">
               <span className="home-direction__icon">
                 <Lightbulb size={22} aria-hidden="true" />
               </span>
@@ -332,7 +326,7 @@ function Home() {
               </div>
             </article>
 
-            <article className="home-direction__point">
+            <article className="card home-direction__point">
               <span className="home-direction__icon">
                 <Compass size={22} aria-hidden="true" />
               </span>
@@ -348,9 +342,9 @@ function Home() {
         </div>
       </section>
 
-      <section className="home-section home-features">
+      <section className="section section--soft home-features">
         <div className="container">
-          <div className="home-section__head">
+          <div className="home-section-head">
             <span className="home-eyebrow">What SkillBridge does</span>
             <h2>From uncertainty to a practical plan.</h2>
             <p>
@@ -362,51 +356,22 @@ function Home() {
           <div className="home-features__grid">
             {FEATURES.map((feature) => {
               const Icon = feature.icon;
-              const isAccent = feature.key === 'analysis';
 
               return (
-                <article
-                  className={`home-feature home-feature--${feature.key} ${
-                    isAccent ? 'home-feature--accent' : ''
-                  }`}
-                  key={feature.key}
-                >
+                <article className="card home-feature" key={feature.key}>
                   <span className="home-feature__icon">
                     <Icon size={24} aria-hidden="true" />
                   </span>
                   <h3>{feature.title}</h3>
                   <p>{feature.text}</p>
 
-                  {feature.key === 'analysis' && (
-                    <ul className="home-feature__checks">
-                      {feature.points.map((point) => (
-                        <li key={point}>
-                          <CheckCircle2 size={17} aria-hidden="true" />
-                          {point}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {feature.key === 'roadmaps' && (
-                    <div className="home-feature__track" aria-hidden="true">
-                      <span>Learn</span>
-                      <i />
-                      <span>Practise</span>
-                      <i />
-                      <span>Apply</span>
-                    </div>
-                  )}
-
-                  {feature.key === 'opportunities' && (
+                  {feature.key === 'opportunities' ? (
                     <div className="home-feature__pills">
                       {feature.points.map((point) => (
                         <span key={point}>{point}</span>
                       ))}
                     </div>
-                  )}
-
-                  {feature.key === 'progress' && (
+                  ) : (
                     <ul className="home-feature__checks">
                       {feature.points.map((point) => (
                         <li key={point}>
@@ -423,9 +388,9 @@ function Home() {
         </div>
       </section>
 
-      <section className="home-section home-steps">
+      <section className="section home-steps">
         <div className="container">
-          <div className="home-section__head">
+          <div className="home-section-head">
             <span className="home-eyebrow">How it works</span>
             <h2>A clear path from profile to progress.</h2>
             <p>
@@ -436,7 +401,7 @@ function Home() {
 
           <div className="home-steps__grid">
             {STEPS.map((step) => (
-              <article className="home-step" key={step.number}>
+              <article className="card home-step" key={step.number}>
                 <span className="home-step__number">{step.number}</span>
                 <h3>{step.title}</h3>
                 <p>{step.text}</p>
@@ -446,7 +411,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="home-section home-opportunities">
+      <section className="section section--soft home-opportunities">
         <div className="container">
           <div className="home-opportunities__head">
             <div>
@@ -474,7 +439,10 @@ function Home() {
               aria-busy="true"
             >
               {[0, 1, 2].map((item) => (
-                <div className="home-opportunity home-opportunity--loading" key={item}>
+                <div
+                  className="card home-opportunity home-opportunity--loading"
+                  key={item}
+                >
                   <span className="home-skeleton home-skeleton--short" />
                   <span className="home-skeleton" />
                   <span className="home-skeleton home-skeleton--medium" />
@@ -511,7 +479,7 @@ function Home() {
           )}
 
           {(preview.status === 'empty' || preview.status === 'error') && (
-            <div className="home-opportunities__fallback">
+            <div className="card home-opportunities__fallback">
               <span className="home-opportunities__fallback-icon">
                 <Compass size={24} aria-hidden="true" />
               </span>
@@ -534,7 +502,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="home-section home-honesty">
+      <section className="section home-honesty">
         <div className="container home-honesty__grid">
           <div>
             <span className="home-eyebrow">Built on honest guidance</span>
@@ -556,7 +524,7 @@ function Home() {
             </div>
           </div>
 
-          <aside className="home-honesty__panel" aria-label="Guidance boundaries">
+          <aside className="card home-honesty__panel" aria-label="Guidance boundaries">
             <span className="home-honesty__icon">
               <ShieldCheck size={26} aria-hidden="true" />
             </span>

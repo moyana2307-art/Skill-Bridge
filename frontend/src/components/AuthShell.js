@@ -8,6 +8,7 @@ import {
   UserPlus,
   UserRound,
 } from 'lucide-react';
+import PageHeader from './PageHeader';
 import './Auth.css';
 
 const PANELS = {
@@ -68,33 +69,32 @@ function AuthShell({ variant = 'login', title, description, children, footer }) 
   const { HeaderIcon } = panel;
 
   return (
-    <section className={`auth auth--${variant}`}>
-      <div className="container auth__layout">
-        <aside className="auth-aside" aria-labelledby="auth-aside-title">
-          <div className="auth-aside__inner">
-            <span className="auth-aside__brand">
-              <Sparkles size={17} aria-hidden="true" />
-              SkillBridge AI
+    <div className={`auth auth--${variant}`}>
+      <PageHeader
+        eyebrow={panel.kicker}
+        icon={HeaderIcon}
+        title={title}
+        description={description}
+      />
+
+      <section className="section section--soft">
+        <div className="container auth__layout">
+          <aside className="card auth__aside" aria-labelledby="auth-aside-title">
+            <span className="badge">
+              <Sparkles size={14} aria-hidden="true" />
+              {panel.eyebrow}
             </span>
+            <h2 id="auth-aside-title">{panel.title}</h2>
+            <p className="auth__aside-text">{panel.text}</p>
 
-            <div className="auth-aside__copy">
-              <span className="auth-aside__eyebrow">{panel.eyebrow}</span>
-              <p className="auth-aside__title" id="auth-aside-title">
-                {panel.title}
-              </p>
-              <p className="auth-aside__text">{panel.text}</p>
-            </div>
-
-            <ol className="auth-aside__steps">
+            <ol className="auth__steps">
               {panel.steps.map(({ Icon, title: stepTitle, text }, index) => (
-                <li className="auth-aside__step" key={stepTitle}>
-                  <span className="auth-aside__step-icon">
-                    <Icon size={19} aria-hidden="true" />
+                <li className="auth__step" key={stepTitle}>
+                  <span className="auth__step-icon">
+                    <Icon size={18} aria-hidden="true" />
                   </span>
                   <div>
-                    <span className="auth-aside__step-number">
-                      Step {index + 1}
-                    </span>
+                    <span className="auth__step-number">Step {index + 1}</span>
                     <strong>{stepTitle}</strong>
                     <p>{text}</p>
                   </div>
@@ -102,29 +102,19 @@ function AuthShell({ variant = 'login', title, description, children, footer }) 
               ))}
             </ol>
 
-            <p className="auth-aside__note">
+            <p className="auth__note">
               <ShieldCheck size={17} aria-hidden="true" />
               {panel.note}
             </p>
+          </aside>
+
+          <div className="card auth__card">
+            {children}
+            {footer && <p className="auth__footer">{footer}</p>}
           </div>
-        </aside>
-
-        <div className="auth__card">
-          <div className="auth__header">
-            <span className="auth__kicker">
-              <HeaderIcon size={15} aria-hidden="true" />
-              {panel.kicker}
-            </span>
-            <h1>{title}</h1>
-            <p>{description}</p>
-          </div>
-
-          {children}
-
-          {footer && <p className="auth__footer">{footer}</p>}
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
 
