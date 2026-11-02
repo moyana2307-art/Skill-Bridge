@@ -7,9 +7,18 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'user' CHECK (role IN ('user','admin')),
+  status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended')),
+  suspended_at TIMESTAMPTZ,
+  suspended_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  suspension_reason TEXT,
+  last_login_at TIMESTAMPTZ,
+  last_active_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+CREATE INDEX IF NOT EXISTS idx_users_last_active ON users(last_active_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS user_profiles (
   id BIGSERIAL PRIMARY KEY,
@@ -328,18 +337,28 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
   plan_code VARCHAR(30) NOT NULL REFERENCES subscription_plans(code),
   status VARCHAR(20) NOT NULL DEFAULT 'active'
-    CHECK (status IN ('active', 'trialing', 'past_due', 'canceled')),
+    CHECK (status IN ('active', 'trialing', 'past_due', 'canceled', 'expired')),
   source VARCHAR(20) NOT NULL DEFAULT 'admin'
     CHECK (source IN ('admin', 'institution', 'system', 'payment')),
   institution_id BIGINT REFERENCES institutions(id) ON DELETE SET NULL,
+  amount_cents INTEGER,
+  currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+  billing_interval VARCHAR(20) NOT NULL DEFAULT 'month'
+    CHECK (billing_interval IN ('month', 'year', 'none')),
   started_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  current_period_start TIMESTAMPTZ,
   current_period_end TIMESTAMPTZ,
   canceled_at TIMESTAMPTZ,
+  cancel_reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_subscriptions_plan ON subscriptions(plan_code, status);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_institution ON subscriptions(institution_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_period_end
+  ON subscriptions(current_period_end);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_billing
+  ON subscriptions(source, status, current_period_end);
 
 CREATE TABLE IF NOT EXISTS plan_requests (
   id BIGSERIAL PRIMARY KEY,
@@ -359,6 +378,7 @@ CREATE TABLE IF NOT EXISTS payment_records (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
   institution_id BIGINT REFERENCES institutions(id) ON DELETE SET NULL,
+  subscription_id BIGINT REFERENCES subscriptions(id) ON DELETE SET NULL,
   plan_code VARCHAR(30) REFERENCES subscription_plans(code),
   amount_cents INTEGER NOT NULL DEFAULT 0,
   currency VARCHAR(3) NOT NULL DEFAULT 'USD',
@@ -368,14 +388,117 @@ CREATE TABLE IF NOT EXISTS payment_records (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   status VARCHAR(20) NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'paid', 'failed', 'cancelled', 'refunded', 'disputed')),
+  refunded_amount_cents INTEGER NOT NULL DEFAULT 0
+    CHECK (refunded_amount_cents >= 0),
+  paid_at TIMESTAMPTZ,
+  refunded_at TIMESTAMPTZ,
+  failed_at TIMESTAMPTZ,
+  failure_reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_payment_records_user ON payment_records(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_payment_records_subscription
+  ON payment_records(subscription_id);
 CREATE INDEX IF NOT EXISTS idx_payment_records_reference
   ON payment_records(provider, provider_reference);
 CREATE INDEX IF NOT EXISTS idx_payment_records_transaction
   ON payment_records(provider, provider_transaction_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_records_provider_reference_unique
+  ON payment_records(provider, provider_reference)
+  WHERE provider_reference IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_records_provider_transaction_unique
+  ON payment_records(provider, provider_transaction_id)
+  WHERE provider_transaction_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_payment_records_status_created
+  ON payment_records(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_payment_records_paid_at
+  ON payment_records(paid_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- 006 - Admin control centre foundation
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  event_type VARCHAR(80) NOT NULL,
+  entity_type VARCHAR(40),
+  entity_id BIGINT,
+  title VARCHAR(200),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  ip_address VARCHAR(64),
+  user_agent VARCHAR(300),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created
+  ON activity_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_user
+  ON activity_logs(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_type
+  ON activity_logs(event_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_entity
+  ON activity_logs(entity_type, entity_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS admin_audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  admin_user_id BIGINT,
+  admin_name VARCHAR(100),
+  action VARCHAR(80) NOT NULL,
+  target_type VARCHAR(40) NOT NULL,
+  target_id BIGINT,
+  target_label VARCHAR(200),
+  before_data JSONB,
+  after_data JSONB,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  ip_address VARCHAR(64),
+  user_agent VARCHAR(300),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_created
+  ON admin_audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_admin
+  ON admin_audit_logs(admin_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_action
+  ON admin_audit_logs(action, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_target
+  ON admin_audit_logs(target_type, target_id, created_at DESC);
+
+CREATE OR REPLACE FUNCTION prevent_admin_audit_log_mutation()
+RETURNS trigger AS $$
+BEGIN
+  RAISE EXCEPTION 'admin_audit_logs rows are immutable';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS admin_audit_logs_immutable ON admin_audit_logs;
+CREATE TRIGGER admin_audit_logs_immutable
+  BEFORE UPDATE OR DELETE ON admin_audit_logs
+  FOR EACH ROW EXECUTE FUNCTION prevent_admin_audit_log_mutation();
+
+CREATE TABLE IF NOT EXISTS subscription_events (
+  id BIGSERIAL PRIMARY KEY,
+  subscription_id BIGINT REFERENCES subscriptions(id) ON DELETE SET NULL,
+  user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  event_type VARCHAR(40) NOT NULL,
+  from_plan_code VARCHAR(30),
+  to_plan_code VARCHAR(30),
+  from_status VARCHAR(20),
+  to_status VARCHAR(20),
+  source VARCHAR(20),
+  amount_cents INTEGER,
+  currency VARCHAR(3),
+  actor_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_subscription_events_created
+  ON subscription_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_subscription_events_user
+  ON subscription_events(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_subscription_events_subscription
+  ON subscription_events(subscription_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_subscription_events_type
+  ON subscription_events(event_type, created_at DESC);
 
 INSERT INTO subscription_plans
   (code, name, description, price_cents, currency, billing_interval, rank, features, limits, sort_order)

@@ -4,6 +4,7 @@
 const { pool } = require('../config/db');
 const ApiError = require('../utils/ApiError');
 const notificationsService = require('./notifications.service');
+const subscriptionEvents = require('./subscriptionEvents.service');
 const {
   PLANS,
   FEATURES,
@@ -16,8 +17,10 @@ const {
 } = require('../config/plans');
 
 const SUBSCRIPTION_SELECT = `SELECT s.id, s.user_id, s.plan_code, s.status, s.source,
-  s.institution_id, s.started_at, s.current_period_end, s.canceled_at,
-  s.created_at, s.updated_at, i.name AS institution_name, i.slug AS institution_slug
+  s.institution_id, s.amount_cents, s.currency, s.billing_interval,
+  s.started_at, s.current_period_start, s.current_period_end, s.canceled_at,
+  s.cancel_reason, s.created_at, s.updated_at,
+  i.name AS institution_name, i.slug AS institution_slug
   FROM subscriptions s
   LEFT JOIN institutions i ON i.id = s.institution_id`;
 
@@ -140,11 +143,16 @@ async function getEntitlements(userId) {
           status: subscription.status,
           source: subscription.source,
           institution_id: subscription.institution_id,
-          institution_name: subscription.institution_name,
-          institution_slug: subscription.institution_slug,
-          started_at: subscription.started_at,
-          current_period_end: subscription.current_period_end,
-        }
+           institution_name: subscription.institution_name,
+           institution_slug: subscription.institution_slug,
+           amount_cents: subscription.amount_cents,
+           currency: subscription.currency,
+           billing_interval: subscription.billing_interval,
+           started_at: subscription.started_at,
+           current_period_start: subscription.current_period_start,
+           current_period_end: subscription.current_period_end,
+           cancel_reason: subscription.cancel_reason,
+         }
       : null,
     features,
     usage,
@@ -223,39 +231,118 @@ async function assertAnyFeature(userId, features) {
 async function assignPlan(
   userId,
   planCode,
-  { status = 'active', source = 'admin', institutionId = null, periodEnd = null } = {}
+  {
+    status = 'active',
+    source = 'admin',
+    institutionId = null,
+    amountCents = null,
+    periodStart = null,
+    periodEnd = null,
+    cancelReason = null,
+    actorUserId = null,
+    eventType = null,
+  } = {}
 ) {
   const plan = getPlan(planCode);
   if (!PLANS[planCode]) {
     throw ApiError.badRequest(`Unknown plan "${planCode}"`);
   }
 
+  const { rows: existingRows } = await pool.query(
+    `SELECT id, plan_code, status, source, current_period_start FROM subscriptions WHERE user_id = $1`,
+    [userId]
+  );
+  const existing = existingRows[0] || null;
+  const resolvedAmount =
+    amountCents === null || amountCents === undefined
+      ? source === 'payment'
+        ? plan.price_cents
+        : 0
+      : Number(amountCents);
+
   const { rows } = await pool.query(
     `INSERT INTO subscriptions
-       (user_id, plan_code, status, source, institution_id, current_period_end)
-     VALUES ($1, $2, $3, $4, $5, $6)
+       (user_id, plan_code, status, source, institution_id, amount_cents, currency,
+        billing_interval, current_period_start, current_period_end, cancel_reason)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9, CURRENT_TIMESTAMP), $10, $11)
      ON CONFLICT (user_id) DO UPDATE SET
        plan_code = EXCLUDED.plan_code,
        status = EXCLUDED.status,
        source = EXCLUDED.source,
        institution_id = EXCLUDED.institution_id,
+       amount_cents = EXCLUDED.amount_cents,
+       currency = EXCLUDED.currency,
+       billing_interval = EXCLUDED.billing_interval,
+       current_period_start = CASE
+         WHEN subscriptions.plan_code <> EXCLUDED.plan_code
+           OR subscriptions.current_period_start IS NULL
+         THEN EXCLUDED.current_period_start
+         ELSE subscriptions.current_period_start
+       END,
        current_period_end = EXCLUDED.current_period_end,
        canceled_at = CASE WHEN EXCLUDED.status = 'canceled' THEN CURRENT_TIMESTAMP ELSE NULL END,
+       cancel_reason = CASE
+         WHEN EXCLUDED.status = 'canceled'
+         THEN COALESCE(EXCLUDED.cancel_reason, subscriptions.cancel_reason)
+         ELSE NULL
+       END,
        started_at = CASE
          WHEN subscriptions.plan_code <> EXCLUDED.plan_code THEN CURRENT_TIMESTAMP
          ELSE subscriptions.started_at
        END,
        updated_at = CURRENT_TIMESTAMP
-     RETURNING id, user_id, plan_code, status, source, institution_id,
-       started_at, current_period_end, canceled_at, created_at, updated_at`,
-    [userId, planCode, status, source, institutionId, periodEnd]
+     RETURNING id, user_id, plan_code, status, source, institution_id, amount_cents,
+       currency, billing_interval, started_at, current_period_start, current_period_end,
+       canceled_at, cancel_reason, created_at, updated_at`,
+    [
+      userId,
+      planCode,
+      status,
+      source,
+      institutionId,
+      resolvedAmount,
+      plan.currency,
+      plan.billing_interval,
+      periodStart,
+      periodEnd,
+      cancelReason,
+    ]
   );
 
-  return { ...rows[0], plan: publicPlan(plan) };
+  const subscription = rows[0];
+  const resolvedEvent =
+    eventType ||
+    (!existing
+      ? 'assigned'
+      : existing.plan_code !== subscription.plan_code
+      ? 'plan_changed'
+      : existing.status !== subscription.status
+      ? 'status_changed'
+      : 'updated');
+
+  await subscriptionEvents.recordSubscriptionEvent({
+    subscriptionId: subscription.id,
+    userId,
+    eventType: resolvedEvent,
+    fromPlanCode: existing?.plan_code || null,
+    toPlanCode: subscription.plan_code,
+    fromStatus: existing?.status || null,
+    toStatus: subscription.status,
+    source,
+    amountCents: subscription.amount_cents,
+    currency: subscription.currency,
+    actorUserId,
+  });
+
+  return { ...subscription, plan: publicPlan(plan) };
 }
 
-async function resetToFree(userId) {
-  return assignPlan(userId, 'free', { source: 'system' });
+async function resetToFree(userId, { actorUserId = null, eventType = null } = {}) {
+  return assignPlan(userId, 'free', {
+    source: 'system',
+    actorUserId,
+    eventType: eventType || 'reset_to_free',
+  });
 }
 
 async function listSubscriptions({ plan, status, page, limit }) {
@@ -278,7 +365,8 @@ async function listSubscriptions({ plan, status, page, limit }) {
 
   const { rows } = await pool.query(
     `SELECT s.id, s.user_id, s.plan_code, s.status, s.source, s.institution_id,
-       s.started_at, s.current_period_end, s.created_at,
+       s.amount_cents, s.currency, s.billing_interval, s.current_period_start,
+       s.current_period_end, s.cancel_reason, s.started_at, s.created_at,
        u.name, u.email, p.name AS plan_name
      FROM subscriptions s
      JOIN users u ON u.id = s.user_id
@@ -415,6 +503,8 @@ async function reviewPlanRequest(adminId, requestId, status) {
     await assignPlan(request.user_id, request.plan_code, {
       source: 'admin',
       status: 'active',
+      actorUserId: adminId,
+      eventType: 'plan_request_approved',
     });
     await notificationsService.notify(request.user_id, {
       type: 'announcement',
@@ -437,11 +527,37 @@ async function reviewPlanRequest(adminId, requestId, status) {
 async function adminStats() {
   const { rows } = await pool.query(
     `SELECT
+       COUNT(*) AS total,
        COUNT(*) FILTER (WHERE plan_code = 'free') AS free,
        COUNT(*) FILTER (WHERE plan_code = 'plus') AS plus,
        COUNT(*) FILTER (WHERE plan_code = 'premium') AS premium,
        COUNT(*) FILTER (WHERE plan_code = 'institution') AS institution,
-       COUNT(*) FILTER (WHERE status = 'active') AS active
+       COUNT(*) FILTER (
+         WHERE status IN ('active', 'trialing')
+           AND (current_period_end IS NULL OR current_period_end > CURRENT_TIMESTAMP)
+       ) AS active,
+       COUNT(*) FILTER (
+         WHERE source = 'payment'
+           AND plan_code IN ('plus', 'premium')
+           AND status IN ('active', 'trialing')
+           AND (current_period_end IS NULL OR current_period_end > CURRENT_TIMESTAMP)
+       ) AS paid_active,
+       COUNT(*) FILTER (
+         WHERE status IN ('active', 'trialing')
+           AND plan_code IN ('plus', 'premium')
+           AND (current_period_end IS NULL OR current_period_end > CURRENT_TIMESTAMP)
+       ) AS premium_subscribers,
+       COUNT(*) FILTER (WHERE status = 'trialing') AS trialing,
+       COUNT(*) FILTER (WHERE status = 'past_due') AS past_due,
+       COUNT(*) FILTER (WHERE status = 'canceled') AS canceled,
+       COUNT(*) FILTER (
+         WHERE status = 'expired'
+           OR (
+             status IN ('active', 'trialing')
+             AND current_period_end IS NOT NULL
+             AND current_period_end <= CURRENT_TIMESTAMP
+           )
+       ) AS expired
      FROM subscriptions`
   );
 

@@ -31,8 +31,147 @@
 
 .admin__signups,
 .admin__announce,
-.admin__users {
+.admin__users,
+.admin__activity {
   padding: 1.4rem;
+}
+
+.admin__activity {
+  margin-bottom: 1.25rem;
+}
+
+.admin__activity-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.admin__activity-toolbar .admin__search {
+  flex: 1;
+}
+
+.admin__activity-toolbar .form-select {
+  min-width: 190px;
+}
+
+.admin__activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin__activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin__activity-item:last-child {
+  border-bottom: 0;
+}
+
+.admin__activity-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.35rem;
+  border-radius: 50%;
+  background: var(--color-text-light);
+}
+
+.admin__activity-dot--auth {
+  background: #2f855a;
+}
+
+.admin__activity-dot--admin {
+  background: var(--color-primary);
+}
+
+.admin__activity-dot--payment {
+  background: #b7791f;
+}
+
+.admin__activity-dot--career_goal {
+  background: #3182ce;
+}
+
+.admin__activity-dot--roadmap {
+  background: #805ad5;
+}
+
+.admin__activity-dot--application {
+  background: #dd6b20;
+}
+
+.admin__activity-dot--project {
+  background: #319795;
+}
+
+.admin__activity-dot--ai {
+  background: #6b46c1;
+}
+
+.admin__activity-dot--mentor {
+  background: #d53f8c;
+}
+
+.admin__activity-dot--career_studio {
+  background: #2c7a7b;
+}
+
+.admin__activity-dot--institution {
+  background: #4a5568;
+}
+
+.admin__activity-dot--profile {
+  background: #718096;
+}
+
+.admin__activity-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin__activity-main strong {
+  display: block;
+  font-size: 0.86rem;
+}
+
+.admin__activity-main small {
+  color: var(--color-text-light);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.admin__activity-type {
+  color: var(--color-text-light);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.admin__live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38a169;
+  box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.15);
+  animation: admin-live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes admin-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 .admin__signups header,
@@ -262,5 +401,9 @@
 @media (max-width: 560px) {
   .admin__stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin__activity-type {
+    display: none;
   }
 }

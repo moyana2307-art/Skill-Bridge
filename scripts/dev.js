@@ -5,6 +5,8 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const isWindows = process.platform === 'win32';
 
+require('dotenv').config({ path: path.join(root, '.env') });
+
 const SERVICES = [
   {
     name: 'backend',
@@ -131,6 +133,7 @@ function startService(service) {
     cwd: service.cwd,
     stdio: ['ignore', 'pipe', 'pipe'],
     shell: true,
+    env: { ...process.env, PORT: String(service.port) },
   });
 
   children.push(child);

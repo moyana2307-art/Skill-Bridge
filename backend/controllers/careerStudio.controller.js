@@ -1,10 +1,21 @@
 // CV, cover letter, and mock interview endpoints.
 const careerStudioService = require('../services/careerStudio.service');
+const activityService = require('../services/activity.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 
 async function generateCv(req, res) {
   const cv = await careerStudioService.generateCv(req.user.id, req.validated.body);
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career_studio.cv_generated',
+    entityType: 'cv',
+    entityId: cv.id,
+    title: `Generated CV: ${cv.title || 'Untitled'}`,
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: { cv },
@@ -50,6 +61,16 @@ async function analyzeCv(req, res) {
     req.validated.body
   );
   if (!result) throw ApiError.notFound(`CV ${cvId} was not found`);
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career_studio.cv_analyzed',
+    entityType: 'cv',
+    entityId: cvId,
+    title: 'Reviewed a CV',
+    req,
+  });
+
   return sendSuccess(res, { data: result, message: 'CV review ready' });
 }
 
@@ -58,6 +79,16 @@ async function createCoverLetter(req, res) {
     req.user.id,
     req.validated.body
   );
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career_studio.cover_letter_generated',
+    entityType: 'cover_letter',
+    entityId: coverLetter.id,
+    title: `Generated cover letter: ${coverLetter.title || 'Untitled'}`,
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: { cover_letter: coverLetter },
@@ -88,6 +119,16 @@ async function startInterview(req, res) {
     req.user.id,
     req.validated.body
   );
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career_studio.interview_started',
+    entityType: 'mock_interview',
+    entityId: interview.id,
+    title: `Started mock interview: ${interview.title || 'Untitled'}`,
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: { interview },
@@ -135,6 +176,17 @@ async function completeInterview(req, res) {
     interviewId
   );
   if (!interview) throw ApiError.notFound(`Interview ${interviewId} was not found`);
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career_studio.interview_completed',
+    entityType: 'mock_interview',
+    entityId: interviewId,
+    title: `Completed mock interview: ${interview.title || 'Untitled'}`,
+    metadata: { score: interview.score ?? null },
+    req,
+  });
+
   return sendSuccess(res, {
     data: { interview },
     message: 'Mock interview completed',

@@ -1,6 +1,7 @@
 // Opportunity endpoints (jobs, internships, scholarships, training, courses).
 const opportunitiesService = require('../services/opportunities.service');
 const { syncOpportunities } = require('../services/opportunitySync.service');
+const activityService = require('../services/activity.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 
@@ -26,6 +27,19 @@ async function getOne(req, res) {
   const opportunity = await opportunitiesService.getOpportunityById(id);
 
   if (!opportunity) throw ApiError.notFound(`Opportunity ${id} was not found`);
+
+  await activityService.logActivity({
+    userId: req.user?.id || null,
+    eventType: 'opportunity.viewed',
+    entityType: 'opportunity',
+    entityId: id,
+    title: `Viewed ${opportunity.title}`,
+    metadata: {
+      opportunity_type: opportunity.opportunity_type || null,
+      organisation: opportunity.organisation || null,
+    },
+    req,
+  });
 
   return sendSuccess(res, { data: opportunity });
 }
@@ -107,6 +121,15 @@ async function save(req, res) {
     throw ApiError.notFound(`Opportunity ${id} was not found`);
   }
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'opportunity.saved',
+    entityType: 'opportunity',
+    entityId: id,
+    title: `Saved ${result.opportunity?.title || `opportunity ${id}`}`,
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: result.status === 'created' ? 201 : 200,
     data: { opportunity: result.opportunity },
@@ -128,6 +151,15 @@ async function unsave(req, res) {
   if (!removed) {
     throw ApiError.notFound('That opportunity is not in your saved list');
   }
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'opportunity.unsaved',
+    entityType: 'opportunity',
+    entityId: id,
+    title: `Removed opportunity ${id} from saved list`,
+    req,
+  });
 
   return sendSuccess(res, {
     data: { opportunity_id: id },

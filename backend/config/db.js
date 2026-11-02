@@ -26,6 +26,14 @@ if (env.db.connectionString) {
 }
 
 const pool = new Pool(poolOptions);
+const migrationPool =
+  env.db.migrationConnectionString &&
+  env.db.migrationConnectionString !== env.db.connectionString
+    ? new Pool({
+        ...poolOptions,
+        connectionString: env.db.migrationConnectionString,
+      })
+    : pool;
 
 async function testConnection() {
   const result = await pool.query('SELECT 1 AS ok');
@@ -49,4 +57,4 @@ function getConnectionInfo() {
   }
 }
 
-module.exports = { pool, testConnection, getConnectionInfo };
+module.exports = { pool, migrationPool, testConnection, getConnectionInfo };

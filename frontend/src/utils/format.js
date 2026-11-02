@@ -25,6 +25,18 @@ export function formatDateTime(value) {
   });
 }
 
+export function formatCurrency(cents, currency = 'USD') {
+  const amount = Number(cents || 0) / 100;
+  if (Number.isNaN(amount)) return '';
+
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: currency || 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 export function formatRelative(value) {
   if (!value) return '';
   const date = new Date(value);

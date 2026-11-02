@@ -46,7 +46,10 @@ DECLARE
     'plan_requests',
     'institutions',
     'institution_members',
-    'payment_records'
+    'payment_records',
+    'activity_logs',
+    'admin_audit_logs',
+    'subscription_events'
   ];
 BEGIN
   FOREACH table_name IN ARRAY tables LOOP

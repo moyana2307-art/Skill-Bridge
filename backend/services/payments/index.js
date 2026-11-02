@@ -4,6 +4,7 @@
 
 const ApiError = require('../../utils/ApiError');
 const { pool } = require('../../config/db');
+const { env } = require('../../config/env');
 
 const PROVIDERS = {};
 
@@ -20,13 +21,13 @@ function getProvider(name) {
 }
 
 function getDefaultProvider() {
-  const name = process.env.PAYMENT_PROVIDER || 'paynow';
-  return getProvider(name);
+  return getProvider(env.payments.provider);
 }
 
 async function createPaymentRecord({
   userId = null,
   institutionId = null,
+  subscriptionId = null,
   planCode = null,
   amountCents = 0,
   currency = 'USD',
@@ -37,13 +38,17 @@ async function createPaymentRecord({
 }) {
   const { rows } = await pool.query(
     `INSERT INTO payment_records
-       (user_id, institution_id, plan_code, amount_cents, currency, provider, provider_reference, status, metadata)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
-     RETURNING id, user_id, institution_id, plan_code, amount_cents, currency, provider,
-       provider_reference, provider_transaction_id, status, metadata, created_at, updated_at`,
+       (user_id, institution_id, subscription_id, plan_code, amount_cents, currency,
+        provider, provider_reference, status, metadata)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+     RETURNING id, user_id, institution_id, subscription_id, plan_code, amount_cents,
+       currency, provider, provider_reference, provider_transaction_id, status, metadata,
+       refunded_amount_cents, paid_at, refunded_at, failed_at, failure_reason, created_at,
+       updated_at`,
     [
       userId,
       institutionId,
+      subscriptionId,
       planCode,
       amountCents,
       currency,
@@ -148,6 +153,16 @@ async function settlePayment({
        SET status = $1,
            provider_transaction_id = COALESCE($2, provider_transaction_id),
            metadata = $3::jsonb,
+           paid_at = CASE WHEN $1 = 'paid'
+             THEN COALESCE(paid_at, CURRENT_TIMESTAMP) ELSE paid_at END,
+            refunded_at = CASE WHEN $1 = 'refunded'
+              THEN COALESCE(refunded_at, CURRENT_TIMESTAMP) ELSE refunded_at END,
+            refunded_amount_cents = CASE
+              WHEN $1 = 'refunded' AND refunded_amount_cents = 0 THEN amount_cents
+              ELSE refunded_amount_cents
+            END,
+            failed_at = CASE WHEN $1 = 'failed'
+             THEN COALESCE(failed_at, CURRENT_TIMESTAMP) ELSE failed_at END,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $4
        RETURNING *`,

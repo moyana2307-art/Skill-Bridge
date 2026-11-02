@@ -1,5 +1,6 @@
 // Institution management endpoints.
 const institutionsService = require('../services/institutions.service');
+const activityService = require('../services/activity.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 
@@ -13,6 +14,17 @@ async function create(req, res) {
     req.user.id,
     req.validated.body
   );
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'institution.created',
+    entityType: 'institution',
+    entityId: institution.id,
+    title: `Created institution: ${institution.name || 'Untitled'}`,
+    metadata: { status: institution.status },
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: { institution },
@@ -35,6 +47,17 @@ async function update(req, res) {
     req.validated.body
   );
   if (!institution) throw ApiError.notFound(`Institution ${institutionId} was not found`);
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'institution.updated',
+    entityType: 'institution',
+    entityId: institutionId,
+    title: `Updated institution: ${institution.name || 'Untitled'}`,
+    metadata: { fields: Object.keys(req.validated.body) },
+    req,
+  });
+
   return sendSuccess(res, { data: { institution }, message: 'Institution updated' });
 }
 
@@ -58,6 +81,16 @@ async function addMember(req, res) {
     throw ApiError.conflict('That person is already a member of this institution.');
   }
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'institution.member_added',
+    entityType: 'institution',
+    entityId: institutionId,
+    title: 'Added an institution member',
+    metadata: { member_user_id: result.member?.user_id || null },
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: { member: result.member, plan_assigned: result.plan_assigned },
@@ -72,6 +105,19 @@ async function bulkAddMembers(req, res) {
     institutionId,
     req.validated.body
   );
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'institution.members_bulk_added',
+    entityType: 'institution',
+    entityId: institutionId,
+    title: `Added ${result.added} institution member${
+      result.added === 1 ? '' : 's'
+    }`,
+    metadata: { added: result.added, skipped: result.skipped ?? null },
+    req,
+  });
+
   return sendSuccess(res, {
     data: result,
     message: `${result.added} member${result.added === 1 ? '' : 's'} added`,
@@ -86,6 +132,17 @@ async function removeMember(req, res) {
     userId
   );
   if (!removed) throw ApiError.notFound('That member was not found.');
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'institution.member_removed',
+    entityType: 'institution',
+    entityId: institutionId,
+    title: 'Removed an institution member',
+    metadata: { member_user_id: userId },
+    req,
+  });
+
   return sendSuccess(res, { data: { user_id: userId }, message: 'Member removed' });
 }
 

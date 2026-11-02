@@ -4,7 +4,7 @@ const { idParam, optionalText, paginationQuery } = require('./common.validator')
 
 const requestablePlans = ['plus', 'premium'];
 const requestStatuses = ['pending', 'approved', 'rejected'];
-const subscriptionStatuses = ['active', 'trialing', 'past_due', 'canceled'];
+const subscriptionStatuses = ['active', 'trialing', 'past_due', 'canceled', 'expired'];
 
 const planCodeField = z.enum(requestablePlans, {
   errorMap: () => ({ message: `Plan must be one of: ${requestablePlans.join(', ')}` }),

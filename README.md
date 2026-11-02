@@ -45,22 +45,73 @@ psql "$env:DATABASE_URL" -f backend/sql/seed.sql
 
 ### 2. Configure the connection
 
-Copy `backend/.env.example` to `backend/.env`. Prefer the Supabase transaction
-or session pooler connection string:
+Copy `.env.example` to `.env`. Prefer the Supabase transaction
+pooler URL for the API and the direct URL for migrations:
 
 ```text
-DATABASE_URL=postgresql://postgres:password@host:5432/postgres
+SUPABASE_DATABASE_URL=postgresql://postgres.PROJECT_REF:password@host:6543/postgres
+SUPABASE_DATABASE_URL_UNPOOLED=postgresql://postgres:password@host:5432/postgres
 DB_SSL=true
 DB_SSL_REJECT_UNAUTHORIZED=true
+REPORT_TIMEZONE=Africa/Harare
 ```
 
-The real `.env` is ignored by Git. Do not put database credentials in frontend
-files.
+`SUPABASE_DATABASE_URL` takes precedence over `DATABASE_URL`. Keep
+`DATABASE_URL` only as a fallback for local or non-Supabase databases. The real
+`.env` is ignored by Git. Do not put database credentials in frontend files.
 
-### 3. Verify
+### 3. Run migrations
+
+Apply the SQL files in `backend/sql/migrations/` in numeric order. With the
+unpooled URL configured:
+
+```powershell
+npm.cmd --prefix backend run db:migrate
+```
+
+Migration `008_admin_finance_metrics.sql` adds the subscription billing
+snapshot, refund tracking, and reporting indexes used by the admin dashboard.
+
+### 4. Copy existing data to Supabase
+
+After migrating the Supabase schema, copy data from the previous database in a
+fresh Supabase project:
+
+```powershell
+$env:SOURCE_DATABASE_URL = "postgresql://old-database"
+npm.cmd run db:migrate:supabase -- --dry-run
+npm.cmd run db:migrate:supabase
+```
+
+The target defaults to `SUPABASE_DATABASE_URL_UNPOOLED` from `.env`.
+Override it with `TARGET_DATABASE_URL` if needed.
+
+The copy script orders tables by foreign keys, handles the users self-reference,
+resets sequences, and applies `backend/sql/rls.sql` at the end. Do not run it
+against a database that already contains application rows.
+
+### 5. Verify
 
 Start the backend and open `http://localhost:5000/api/health`. A healthy
 response contains `"status": "ok"` and `"database": "connected"`.
+
+## Payments (Paynow)
+
+Paynow is the production payment provider. Add these values to
+`.env`:
+
+```text
+PAYMENT_PROVIDER=paynow
+PAYNOW_INTEGRATION_ID=your-integration-id
+PAYNOW_INTEGRATION_KEY=your-integration-key
+PAYNOW_RESULT_URL=https://your-api.example.com/api/payments/webhook/paynow
+PAYNOW_RETURN_URL=https://your-frontend.example.com/pricing
+```
+
+The result URL must be publicly reachable over HTTPS. Paynow webhooks are
+verified with the integration key before payment records or subscriptions are
+updated. Only a verified `paid` status grants a paid plan; failed, cancelled,
+refunded, and disputed statuses are stored for the admin revenue view.
 
 ## How to run (development)
 
@@ -191,6 +242,8 @@ Every error response uses the same shape:
 | `POST` | `/api/ai/opportunity-insight` | Explain how an opportunity fits (protected) |
 | `POST` | `/api/ai/profile-review` | Review the current profile (protected) |
 | `GET` | `/api/ai/profile-review/latest` | Latest saved profile review (protected) |
+| `GET` | `/api/admin/dashboard` | Admin control-centre metrics (admin only) |
+| `GET` | `/api/admin/overview` | Legacy admin summary (admin only) |
 | `GET` | `/api/test` | Development-only connectivity check |
 | `POST` | `/api/test/echo` | Development-only validation check |
 
@@ -336,7 +389,7 @@ when an approved ReliefWeb appname is configured, ReliefWeb.
   account first with `npm.cmd run make-admin -- you@example.com`.
 - ReliefWeb requires an approved appname from
   <https://apidoc.reliefweb.int/parameters#appname>. Set
-  `RELIEFWEB_APP_NAME` in `backend/.env`; when it is empty, ReliefWeb is skipped
+  `RELIEFWEB_APP_NAME` in `.env`; when it is empty, ReliefWeb is skipped
   and Remotive still works.
 
 ### AI career features
@@ -362,7 +415,7 @@ ollama pull llama3.2:3b
 ```
 
 The backend expects Ollama at `http://127.0.0.1:11434`. To use a different model
-or machine, change `OLLAMA_MODEL` or `OLLAMA_BASE_URL` in `backend/.env`. The
+or machine, change `OLLAMA_MODEL` or `OLLAMA_BASE_URL` in `.env`. The
 first request after a model loads can take longer; increase
 `OLLAMA_TIMEOUT_MS` if needed. If Ollama is not running or the model is missing,
 these endpoints return a clear configuration error instead of crashing the
@@ -452,8 +505,8 @@ guarantees a job, scholarship, or admission.
 
 ## Environment variables
 
-Backend secrets live in `backend/.env` (never committed). Copy `backend/.env.example`
-to `backend/.env` and fill in real values, including a long random `JWT_SECRET`:
+Backend secrets live in `.env` (never committed). Copy `.env.example`
+to `.env` and fill in real values, including a long random `JWT_SECRET`:
 
 ```powershell
 [Convert]::ToBase64String((1..64 | ForEach-Object { Get-Random -Maximum 256 }))
@@ -550,10 +603,15 @@ The response should contain `"database":"connected"` and HTTP 200.
 
 ### Production checklist
 
-- Use a pooled PostgreSQL connection string for serverless Vercel functions.
+- Use the Supabase transaction pooler URL for serverless Vercel functions and
+  the direct URL for migrations.
 - Use HTTPS and a final Vercel domain in `CLIENT_URL`.
 - Use a long random production `JWT_SECRET`.
 - Keep `DB_SSL=true` for managed PostgreSQL.
+- Set `REPORT_TIMEZONE` to the timezone used for daily, weekly, monthly, and
+  yearly admin metrics.
+- Configure `PAYNOW_INTEGRATION_ID`, `PAYNOW_INTEGRATION_KEY`, and public HTTPS
+  result/return URLs.
 - Use `AI_PROVIDER=pollinations` on Vercel unless you have working OpenAI
   credentials and billing.
 

@@ -1,5 +1,6 @@
 // Learning roadmap and roadmap task endpoints.
 const roadmapsService = require('../services/roadmaps.service');
+const activityService = require('../services/activity.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 
@@ -37,6 +38,16 @@ async function create(req, res) {
     throw ApiError.notFound('That career goal was not found');
   }
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'roadmap.created',
+    entityType: 'roadmap',
+    entityId: result.roadmap.id,
+    title: `Created roadmap: ${result.roadmap.title || 'Untitled'}`,
+    metadata: { status: result.roadmap.status },
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: { roadmap: result.roadmap },
@@ -61,6 +72,22 @@ async function update(req, res) {
     throw ApiError.notFound('That career goal was not found');
   }
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType:
+      req.validated.body.status === 'completed'
+        ? 'roadmap.completed'
+        : 'roadmap.updated',
+    entityType: 'roadmap',
+    entityId: result.roadmap.id,
+    title:
+      req.validated.body.status === 'completed'
+        ? `Completed roadmap: ${result.roadmap.title || 'Untitled'}`
+        : `Updated roadmap: ${result.roadmap.title || 'Untitled'}`,
+    metadata: { status: result.roadmap.status },
+    req,
+  });
+
   return sendSuccess(res, {
     data: { roadmap: result.roadmap },
     message: 'Roadmap updated',
@@ -76,6 +103,15 @@ async function remove(req, res) {
   );
 
   if (!deleted) throw ApiError.notFound(`Roadmap ${roadmapId} was not found`);
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'roadmap.deleted',
+    entityType: 'roadmap',
+    entityId: roadmapId,
+    title: 'Deleted a roadmap',
+    req,
+  });
 
   return sendSuccess(res, {
     data: { roadmap_id: roadmapId },
@@ -96,6 +132,16 @@ async function createTask(req, res) {
     throw ApiError.notFound(`Roadmap ${roadmapId} was not found`);
   }
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'roadmap.task_created',
+    entityType: 'roadmap_task',
+    entityId: result.task.id,
+    title: `Added roadmap task: ${result.task.title || 'Untitled'}`,
+    metadata: { roadmap_id: roadmapId },
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: { task: result.task },
@@ -115,6 +161,22 @@ async function updateTask(req, res) {
 
   if (!task) throw ApiError.notFound(`Task ${taskId} was not found`);
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType:
+      req.validated.body.status === 'completed'
+        ? 'roadmap.task_completed'
+        : 'roadmap.task_updated',
+    entityType: 'roadmap_task',
+    entityId: task.id,
+    title:
+      req.validated.body.status === 'completed'
+        ? `Completed roadmap task: ${task.title || 'Untitled'}`
+        : `Updated roadmap task: ${task.title || 'Untitled'}`,
+    metadata: { roadmap_id: roadmapId, status: task.status },
+    req,
+  });
+
   return sendSuccess(res, { data: { task }, message: 'Roadmap task updated' });
 }
 
@@ -128,6 +190,16 @@ async function removeTask(req, res) {
   );
 
   if (!deleted) throw ApiError.notFound(`Task ${taskId} was not found`);
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'roadmap.task_deleted',
+    entityType: 'roadmap_task',
+    entityId: taskId,
+    title: 'Deleted a roadmap task',
+    metadata: { roadmap_id: roadmapId },
+    req,
+  });
 
   return sendSuccess(res, {
     data: { task_id: taskId },

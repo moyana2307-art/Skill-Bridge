@@ -1,5 +1,6 @@
 // AI Career Mentor endpoints.
 const mentorService = require('../services/mentor.service');
+const activityService = require('../services/activity.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 
@@ -10,6 +11,16 @@ async function list(req, res) {
 
 async function create(req, res) {
   const thread = await mentorService.createThread(req.user.id, req.validated.body);
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'mentor.thread_created',
+    entityType: 'mentor_thread',
+    entityId: thread.id,
+    title: `Started mentor conversation: ${thread.title || 'Untitled'}`,
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: { thread },
@@ -59,6 +70,15 @@ async function send(req, res) {
   if (result.status === 'not_found') {
     throw ApiError.notFound(`Conversation ${threadId} was not found`);
   }
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'mentor.message_sent',
+    entityType: 'mentor_thread',
+    entityId: threadId,
+    title: 'Sent a message to the AI mentor',
+    req,
+  });
 
   return sendSuccess(res, { data: result });
 }

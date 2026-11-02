@@ -1,15 +1,34 @@
-// Promotes an existing account to admin so it can trigger
-// POST /api/opportunities/sync.
-//
-// Usage (from the project root):
-//   node scripts/make-admin.js you@example.com
 const path = require('path');
 
 require('dotenv').config({
-  path: path.join(__dirname, '..', 'backend', '.env'),
+  path: path.join(__dirname, '..', '.env'),
 });
 
 const { pool } = require('../backend/config/db');
+
+async function promoteUser(databasePool, email) {
+  const { rows } = await databasePool.query(
+    `SELECT id, name, email, role FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+    [email]
+  );
+
+  if (!rows.length) {
+    return { found: false, alreadyAdmin: false, user: null };
+  }
+
+  const user = rows[0];
+  if (user.role === 'admin') {
+    return { found: true, alreadyAdmin: true, user };
+  }
+
+  const { rows: updatedRows } = await databasePool.query(
+    `UPDATE users SET role = 'admin', updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1 RETURNING id, name, email, role`,
+    [user.id]
+  );
+
+  return { found: true, alreadyAdmin: false, user: updatedRows[0] };
+}
 
 async function main() {
   const email = process.argv[2];
@@ -20,35 +39,29 @@ async function main() {
     return;
   }
 
-  const [rows] = await pool.execute(
-    'SELECT id, name, email, role FROM users WHERE email = ? LIMIT 1',
-    [email]
-  );
+  const result = await promoteUser(pool, email);
 
-  if (!rows.length) {
+  if (!result.found) {
     console.error(`No account found for ${email}. Register first, then retry.`);
     process.exitCode = 1;
     return;
   }
 
-  const user = rows[0];
-
-  if (user.role === 'admin') {
-    console.log(`${user.email} is already an admin.`);
+  if (result.alreadyAdmin) {
+    console.log(`${result.user.email} is already an admin.`);
     return;
   }
 
-  await pool.execute('UPDATE users SET role = ? WHERE id = ?', [
-    'admin',
-    user.id,
-  ]);
-
-  console.log(`${user.email} (${user.name}) is now an admin.`);
+  console.log(`${result.user.email} (${result.user.name}) is now an admin.`);
 }
 
-main()
-  .catch((err) => {
-    console.error('Could not promote that account:', err.message);
-    process.exitCode = 1;
-  })
-  .finally(() => pool.end());
+if (require.main === module) {
+  main()
+    .catch((err) => {
+      console.error('Could not promote that account:', err.message);
+      process.exitCode = 1;
+    })
+    .finally(() => pool.end());
+}
+
+module.exports = { promoteUser };

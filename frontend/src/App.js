@@ -24,6 +24,16 @@ import PublicPortfolio from './pages/PublicPortfolio';
 import Analytics from './pages/Analytics';
 import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
+import AdminLayout from './pages/admin/AdminLayout';
+import Overview from './pages/admin/Overview';
+import Users from './pages/admin/Users';
+import UserDetail from './pages/admin/UserDetail';
+import ActivityMonitor from './pages/admin/ActivityMonitor';
+import Finance from './pages/admin/Finance';
+import Transactions from './pages/admin/Transactions';
+import Subscriptions from './pages/admin/Subscriptions';
+import AnalyticsPage from './pages/admin/AnalyticsPage';
+import AuditLogs from './pages/admin/AuditLogs';
 import Pricing from './pages/Pricing';
 import Billing from './pages/Billing';
 import Institution from './pages/Institution';
@@ -82,10 +92,21 @@ function App() {
               path="/admin"
               element={
                 <AdminRoute>
-                  <Admin />
+                  <AdminLayout />
                 </AdminRoute>
               }
-            />
+            >
+              <Route index element={<Overview />} />
+              <Route path="users" element={<Users />} />
+              <Route path="users/:userId" element={<UserDetail />} />
+              <Route path="activity" element={<ActivityMonitor />} />
+              <Route path="finance" element={<Finance />} />
+              <Route path="transactions" element={<Transactions />} />
+              <Route path="subscriptions" element={<Subscriptions />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="audit" element={<AuditLogs />} />
+              <Route path="operations" element={<Admin />} />
+            </Route>
           </Route>
         </Routes>
       </BrowserRouter>

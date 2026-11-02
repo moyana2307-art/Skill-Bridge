@@ -1,5 +1,6 @@
 // AI Career Intelligence endpoints.
 const careerIntelligenceService = require('../services/careerIntelligence.service');
+const activityService = require('../services/activity.service');
 const { sendSuccess } = require('../utils/response');
 
 async function runAssessment(req, res) {
@@ -7,6 +8,16 @@ async function runAssessment(req, res) {
     req.user.id,
     req.validated.body
   );
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career.assessment_completed',
+    entityType: 'career_assessment',
+    entityId: assessment?.id || null,
+    title: 'Completed a career assessment',
+    metadata: { model: assessment?.model || null },
+    req,
+  });
 
   return sendSuccess(res, {
     statusCode: 201,
@@ -26,6 +37,14 @@ async function recommendations(req, res) {
     req.validated.body
   );
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career.recommendations_generated',
+    entityType: 'career_recommendation',
+    title: 'Generated AI career recommendations',
+    req,
+  });
+
   return sendSuccess(res, {
     data: result,
     message: 'Career recommendations ready',
@@ -43,6 +62,14 @@ async function compare(req, res) {
     req.validated.body
   );
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career.paths_compared',
+    entityType: 'career_comparison',
+    title: 'Compared career paths',
+    req,
+  });
+
   return sendSuccess(res, { data: result, message: 'Career paths compared' });
 }
 
@@ -56,6 +83,14 @@ async function requirements(req, res) {
     req.user.id,
     req.validated.body
   );
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career.requirements_checked',
+    entityType: 'career_requirements',
+    title: 'Checked career requirements',
+    req,
+  });
 
   return sendSuccess(res, {
     data: result,

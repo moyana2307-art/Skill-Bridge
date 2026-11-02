@@ -1,6 +1,8 @@
 // One place that reads process.env, so the rest of the app never has to.
-// `dotenv` loads backend/.env into process.env when this file is required.
-require('dotenv').config();
+// `dotenv` loads the single project-root .env when this file is required.
+const path = require('path');
+
+require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 
 function toInt(value, fallback) {
   const parsed = Number.parseInt(value, 10);
@@ -23,20 +25,35 @@ function toBaseUrl(value, fallback) {
   return String(value || fallback).trim().replace(/\/+$/, '');
 }
 
+function cleanConnectionString(value) {
+  const trimmed = String(value || '').trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
 const clientUrls = toList(process.env.CLIENT_URL || 'http://localhost:3000');
 const rawConnectionString =
+  process.env.SUPABASE_DATABASE_URL ||
+  process.env.SUPABASE_DB_URL ||
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.POSTGRES_PRISMA_URL ||
   process.env.POSTGRES_URL_NON_POOLING ||
-  process.env.SUPABASE_DATABASE_URL ||
   '';
-const trimmedConnectionString = String(rawConnectionString).trim();
-const connectionString =
-  (trimmedConnectionString.startsWith('"') && trimmedConnectionString.endsWith('"')) ||
-  (trimmedConnectionString.startsWith("'") && trimmedConnectionString.endsWith("'"))
-    ? trimmedConnectionString.slice(1, -1).trim()
-    : trimmedConnectionString;
+const rawMigrationConnectionString =
+  process.env.SUPABASE_DATABASE_URL_UNPOOLED ||
+  process.env.SUPABASE_DB_URL_UNPOOLED ||
+  process.env.DATABASE_URL_UNPOOLED ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  '';
+const connectionString = cleanConnectionString(rawConnectionString);
+const migrationConnectionString =
+  cleanConnectionString(rawMigrationConnectionString) || connectionString;
 
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -45,6 +62,7 @@ const env = {
   clientUrls,
   db: {
     connectionString,
+    migrationConnectionString,
     host: process.env.DB_HOST || 'localhost',
     port: toInt(process.env.DB_PORT, 5432),
     user: process.env.DB_USER || '',
@@ -53,6 +71,18 @@ const env = {
     ssl: toBool(process.env.DB_SSL, connectionString ? true : false),
     sslRejectUnauthorized: toBool(process.env.DB_SSL_REJECT_UNAUTHORIZED, true),
     sslCa: process.env.DB_SSL_CA || '',
+  },
+  reporting: {
+    timezone: process.env.REPORT_TIMEZONE || 'Africa/Harare',
+  },
+  payments: {
+    provider: String(process.env.PAYMENT_PROVIDER || 'paynow').trim().toLowerCase(),
+    paynow: {
+      integrationId: process.env.PAYNOW_INTEGRATION_ID || '',
+      integrationKey: process.env.PAYNOW_INTEGRATION_KEY || '',
+      resultUrl: process.env.PAYNOW_RESULT_URL || '',
+      returnUrl: process.env.PAYNOW_RETURN_URL || '',
+    },
   },
   jwt: {
     secret: process.env.JWT_SECRET || '',
@@ -99,8 +129,8 @@ function assertDatabaseConfigured() {
 
   if (missing.length) {
     throw new Error(
-      `Missing PostgreSQL settings in backend/.env: ${missing.join(', ')}. ` +
-        'Copy backend/.env.example to backend/.env and set DATABASE_URL or the DB_* fallback values.'
+      `Missing PostgreSQL settings in .env: ${missing.join(', ')}. ` +
+        'Copy .env.example to .env and set DATABASE_URL or the DB_* fallback values.'
     );
   }
   return true;
@@ -110,7 +140,7 @@ function assertDatabaseConfigured() {
 function assertAuthConfigured() {
   if (!env.jwt.secret) {
     throw new Error(
-      'Missing JWT_SECRET in backend/.env. Add a long random value before starting the server.'
+      'Missing JWT_SECRET in .env. Add a long random value before starting the server.'
     );
   }
 }

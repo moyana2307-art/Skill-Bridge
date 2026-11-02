@@ -13,6 +13,7 @@ const express = require('express');
 const opportunitiesController = require('../controllers/opportunities.controller');
 const asyncHandler = require('../middleware/asyncHandler');
 const requireAuth = require('../middleware/requireAuth');
+const optionalAuth = require('../middleware/optionalAuth');
 const requireRole = require('../middleware/requireRole');
 const validate = require('../middleware/validate');
 const {
@@ -58,6 +59,7 @@ router.delete(
 );
 router.get(
   '/:id',
+  optionalAuth,
   validate({ params: opportunityIdParams }),
   asyncHandler(opportunitiesController.getOne)
 );

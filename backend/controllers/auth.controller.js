@@ -1,6 +1,8 @@
 // Registration, login, logout, and "who am I" endpoints.
 const authService = require('../services/auth.service');
 const subscriptionsService = require('../services/subscriptions.service');
+const activityService = require('../services/activity.service');
+const adminAudit = require('../services/adminAudit.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 const { signToken, setAuthCookie, clearAuthCookie } = require('../utils/token');
@@ -17,6 +19,16 @@ async function entitlementsFor(userId) {
 // POST /api/auth/register
 async function register(req, res) {
   const user = await authService.createUser(req.validated.body);
+  await authService.recordLogin(user.id);
+
+  await activityService.logActivity({
+    userId: user.id,
+    eventType: 'auth.registered',
+    entityType: 'user',
+    entityId: user.id,
+    title: 'Account created',
+    req,
+  });
 
   setAuthCookie(res, signToken(user));
 
@@ -34,6 +46,33 @@ async function login(req, res) {
 
   if (!user) {
     throw ApiError.unauthorized('Invalid email or password');
+  }
+
+  if (user.status === 'suspended') {
+    throw ApiError.forbidden(
+      'Your account has been suspended. Contact SkillBridge AI support.'
+    );
+  }
+
+  await authService.recordLogin(user.id);
+  await activityService.logActivity({
+    userId: user.id,
+    eventType: 'auth.login',
+    entityType: 'user',
+    entityId: user.id,
+    title: 'Signed in',
+    req,
+  });
+
+  if (user.role === 'admin') {
+    await adminAudit.recordAudit({
+      adminId: user.id,
+      adminName: user.name,
+      action: 'admin.login',
+      targetType: 'session',
+      targetLabel: user.email,
+      req,
+    });
   }
 
   setAuthCookie(res, signToken(user));

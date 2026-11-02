@@ -3,7 +3,8 @@ const { pool } = require('../config/db');
 const ApiError = require('../utils/ApiError');
 
 const BCRYPT_ROUNDS = 12;
-const PUBLIC_USER_COLUMNS = `u.id, u.name, u.email, u.role, u.created_at,
+const PUBLIC_USER_COLUMNS = `u.id, u.name, u.email, u.role, u.status,
+  u.suspension_reason, u.last_login_at, u.last_active_at, u.created_at,
   u.updated_at, p.avatar_data, p.avatar_mime`;
 
 function toPublicUser(row) {
@@ -61,4 +62,31 @@ async function authenticate(email, password) {
   return toPublicUser(row);
 }
 
-module.exports = { findUserById, createUser, authenticate };
+async function recordLogin(userId) {
+  const { rows } = await pool.query(
+    `UPDATE users
+     SET last_login_at = CURRENT_TIMESTAMP,
+         last_active_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING last_login_at, last_active_at`,
+    [userId]
+  );
+  return rows[0] || null;
+}
+
+async function touchLastActive(userId) {
+  const { rows } = await pool.query(
+    `UPDATE users SET last_active_at = CURRENT_TIMESTAMP
+     WHERE id = $1 RETURNING last_active_at`,
+    [userId]
+  );
+  return rows[0] || null;
+}
+
+module.exports = {
+  findUserById,
+  createUser,
+  authenticate,
+  recordLogin,
+  touchLastActive,
+};

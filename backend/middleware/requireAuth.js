@@ -31,6 +31,21 @@ const requireAuth = asyncHandler(async (req, res, next) => {
     throw ApiError.unauthorized('Your account no longer exists');
   }
 
+  if (user.status === 'suspended') {
+    throw ApiError.forbidden(
+      'Your account has been suspended. Contact SkillBridge AI support.'
+    );
+  }
+
+  const lastActive = user.last_active_at
+    ? new Date(user.last_active_at).getTime()
+    : 0;
+  if (!lastActive || Date.now() - lastActive > 5 * 60 * 1000) {
+    authService.touchLastActive(user.id).catch((err) => {
+      console.error('[auth] could not update last active time:', err.message);
+    });
+  }
+
   req.user = user;
   return next();
 });

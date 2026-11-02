@@ -1,0 +1,353 @@
+.admin-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-nav__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-block: 0.55rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.admin-nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.admin-nav__link:hover {
+  background: var(--color-soft);
+  color: var(--color-primary-dark);
+}
+
+.admin-nav__link--active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.admin-page {
+  min-height: 40vh;
+}
+
+.admin-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2rem 0;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+.admin-loading__icon {
+  animation: admin-spin 0.9s linear infinite;
+}
+
+@keyframes admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin__stat small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--color-text-light);
+  font-size: 0.68rem;
+}
+
+.admin__chart--dense {
+  height: 84px;
+}
+
+.admin__chart--dense .admin__bar-wrap span {
+  display: none;
+}
+
+.admin-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-soft);
+  color: var(--color-text-light);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.admin-pill--active,
+.admin-pill--paid,
+.admin-pill--approved {
+  background: #e6f4ea;
+  color: #1e7b45;
+}
+
+.admin-pill--suspended,
+.admin-pill--failed,
+.admin-pill--cancelled,
+.admin-pill--rejected {
+  background: #fdecea;
+  color: #b3261e;
+}
+
+.admin-pill--pending,
+.admin-pill--trialing,
+.admin-pill--past-due {
+  background: #fff4e5;
+  color: #a15c00;
+}
+
+.admin-pill--canceled,
+.admin-pill--expired,
+.admin-pill--refunded,
+.admin-pill--disputed {
+  background: #eceff4;
+  color: #4a5568;
+}
+
+.admin-pill--plan-plus {
+  background: #e8f1fd;
+  color: #1f5f9e;
+}
+
+.admin-pill--plan-premium {
+  background: #f3e8fd;
+  color: #6b3fa0;
+}
+
+.admin-pill--plan-institution {
+  background: #e6f6f4;
+  color: #1f6f68;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+}
+
+.admin-toolbar .form-input,
+.admin-toolbar .form-select {
+  min-height: 38px;
+  font-size: 0.82rem;
+}
+
+.admin-toolbar__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: var(--color-text-light);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-toolbar__grow {
+  flex: 1;
+  min-width: 200px;
+}
+
+.admin-toolbar__grow .form-input {
+  width: 100%;
+}
+
+.admin__range {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-light);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.admin__range .form-select {
+  min-height: 36px;
+}
+
+.admin-card {
+  padding: 1.35rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-card > h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+  font-size: 1.02rem;
+}
+
+.admin-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-split > .admin-card {
+  margin-bottom: 0;
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.admin-actions .form-select {
+  min-height: 34px;
+  padding-block: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.admin-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.admin-detail-head h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.admin-detail-head p {
+  margin: 0.15rem 0 0;
+  color: var(--color-text-light);
+  font-size: 0.82rem;
+}
+
+.admin-meta-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0;
+}
+
+.admin-meta-list dt {
+  color: var(--color-text-light);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-meta-list dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-rows li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.82rem;
+}
+
+.admin-rows li:last-child {
+  border-bottom: 0;
+}
+
+.admin-rows small {
+  display: block;
+  color: var(--color-text-light);
+  font-size: 0.72rem;
+}
+
+.admin-definitions {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--color-text-light);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.admin-code {
+  margin: 0;
+  padding: 0.6rem;
+  max-height: 220px;
+  overflow: auto;
+  border-radius: var(--radius-sm);
+  background: var(--color-soft);
+  color: var(--color-text);
+  font-size: 0.72rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-inline-link {
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-inline-link:hover {
+  text-decoration: underline;
+}
+
+.admin-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-tag {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-soft);
+  font-size: 0.72rem;
+}
+
+.admin-detail-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.admin-detail-panel h3 {
+  margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 900px) {
+  .admin-split {
+    grid-template-columns: 1fr;
+  }
+}

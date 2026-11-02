@@ -97,6 +97,35 @@ function toQueryString(params = {}) {
   return text ? `?${text}` : '';
 }
 
+async function apiDownload(path, filename) {
+  const response = await fetch(`${API_URL}${path}`, {
+    credentials: 'include',
+    headers: { Accept: 'text/csv' },
+  });
+
+  if (!response.ok) {
+    const payload = await readPayload(response);
+    const error = payload?.error || {};
+
+    throw new ApiError(
+      error.message || 'Unable to download that export.',
+      response.status,
+      error.code || 'ERROR',
+      error.details || null
+    );
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export const authApi = {
   register: (data) => apiRequest('/auth/register', { method: 'POST', body: data }),
   login: (data) => apiRequest('/auth/login', { method: 'POST', body: data }),
@@ -374,20 +403,60 @@ export const notificationsApi = {
 
 export const adminApi = {
   overview: () => apiRequest('/admin/overview'),
+  dashboard: () => apiRequest('/admin/dashboard'),
+  activity: (params) => apiRequest(`/admin/activity${toQueryString(params)}`),
   users: (params) => apiRequest(`/admin/users${toQueryString(params)}`),
+  user: (userId) => apiRequest(`/admin/users/${encodeURIComponent(userId)}`),
+  userActivity: (userId, params) =>
+    apiRequest(
+      `/admin/users/${encodeURIComponent(userId)}/activity${toQueryString(params)}`
+    ),
   updateUser: (userId, data) =>
     apiRequest(`/admin/users/${encodeURIComponent(userId)}`, {
       method: 'PATCH',
       body: data,
     }),
+  suspendUser: (userId, reason) =>
+    apiRequest(`/admin/users/${encodeURIComponent(userId)}/suspend`, {
+      method: 'POST',
+      body: { reason: reason || undefined },
+    }),
+  reactivateUser: (userId) =>
+    apiRequest(`/admin/users/${encodeURIComponent(userId)}/reactivate`, {
+      method: 'POST',
+    }),
   removeUser: (userId) =>
     apiRequest(`/admin/users/${encodeURIComponent(userId)}`, {
       method: 'DELETE',
     }),
-  announce: (data) =>
-    apiRequest('/admin/announcements', { method: 'POST', body: data }),
+  financialOverview: (params) =>
+    apiRequest(`/admin/financial-overview${toQueryString(params)}`),
+  transactions: (params) =>
+    apiRequest(`/admin/transactions${toQueryString(params)}`),
+  transaction: (transactionId) =>
+    apiRequest(`/admin/transactions/${encodeURIComponent(transactionId)}`),
   subscriptions: (params) =>
     apiRequest(`/admin/subscriptions${toQueryString(params)}`),
+  subscription: (subscriptionId) =>
+    apiRequest(`/admin/subscriptions/${encodeURIComponent(subscriptionId)}`),
+  analytics: (params) =>
+    apiRequest(`/admin/analytics${toQueryString(params)}`),
+  auditLogs: (params) =>
+    apiRequest(`/admin/audit-logs${toQueryString(params)}`),
+  exportUsers: (params) =>
+    apiDownload(`/admin/users/export${toQueryString(params)}`, 'users.csv'),
+  exportTransactions: (params) =>
+    apiDownload(
+      `/admin/transactions/export${toQueryString(params)}`,
+      'transactions.csv'
+    ),
+  exportSubscriptions: (params) =>
+    apiDownload(
+      `/admin/subscriptions/export${toQueryString(params)}`,
+      'subscriptions.csv'
+    ),
+  announce: (data) =>
+    apiRequest('/admin/announcements', { method: 'POST', body: data }),
   planRequests: (params) =>
     apiRequest(`/admin/plan-requests${toQueryString(params)}`),
   reviewPlanRequest: (requestId, status) =>

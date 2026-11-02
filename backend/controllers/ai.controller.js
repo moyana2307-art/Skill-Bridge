@@ -3,6 +3,7 @@
 const aiCareerService = require('../services/aiCareer.service');
 const aiAnalysesService = require('../services/aiAnalyses.service');
 const aiService = require('../services/ai.service');
+const activityService = require('../services/activity.service');
 const { sendSuccess } = require('../utils/response');
 
 // POST /api/ai/skills-gap
@@ -17,6 +18,16 @@ async function skillsGap(req, res) {
     careerGoalId: result.career_goal_id,
     model: aiService.getModelName(),
     payload: result.analysis,
+  });
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'ai.skills_gap',
+    entityType: 'ai_analysis',
+    entityId: saved?.id || null,
+    title: 'Generated a skills gap analysis',
+    metadata: { career_goal_id: result.career_goal_id },
+    req,
   });
 
   return sendSuccess(res, {
@@ -52,6 +63,16 @@ async function generateRoadmap(req, res) {
     req.validated.body
   );
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'ai.roadmap_generated',
+    entityType: 'roadmap',
+    entityId: result.roadmap.id,
+    title: `Generated roadmap: ${result.roadmap.title || 'Untitled'}`,
+    metadata: { generated_tasks: result.generated_tasks },
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: {
@@ -78,6 +99,15 @@ async function opportunityInsight(req, res) {
     payload: result.insight,
   });
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'ai.opportunity_insight',
+    entityType: 'opportunity',
+    entityId: result.opportunity.id,
+    title: `Generated insight for ${result.opportunity.title || 'an opportunity'}`,
+    req,
+  });
+
   return sendSuccess(res, {
     data: {
       ...result,
@@ -95,6 +125,15 @@ async function profileReview(req, res) {
     type: 'profile_review',
     model: result.model,
     payload: result.review,
+  });
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'ai.profile_review',
+    entityType: 'ai_analysis',
+    entityId: saved?.id || null,
+    title: 'Generated a profile review',
+    req,
   });
 
   return sendSuccess(res, {

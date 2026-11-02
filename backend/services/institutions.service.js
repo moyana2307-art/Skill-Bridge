@@ -118,6 +118,7 @@ async function assignInstitutionPlanIfEligible(userId, institutionId) {
   await subscriptionsService.assignPlan(userId, 'institution', {
     source: 'institution',
     institutionId,
+    eventType: 'institution_assigned',
   });
   return { assigned: true, reason: 'assigned' };
 }
@@ -416,7 +417,10 @@ async function removeMember(userId, institutionId, memberUserId) {
     subscription.source === 'institution' &&
     String(subscription.institution_id) === String(institutionId)
   ) {
-    await subscriptionsService.resetToFree(memberUserId);
+    await subscriptionsService.resetToFree(memberUserId, {
+      actorUserId: userId,
+      eventType: 'institution_removed',
+    });
     downgraded = true;
   }
 
@@ -515,7 +519,9 @@ async function syncInstitutionPlans(institutionId, active) {
     [institutionId]
   );
   for (const subscription of subscriptions) {
-    await subscriptionsService.resetToFree(subscription.user_id);
+    await subscriptionsService.resetToFree(subscription.user_id, {
+      eventType: 'institution_suspended',
+    });
   }
 }
 

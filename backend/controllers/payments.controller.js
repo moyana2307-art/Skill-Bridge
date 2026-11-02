@@ -3,6 +3,7 @@ const paynowService = require('../services/payments/paynow.service');
 const { sendSuccess } = require('../utils/response');
 const ApiError = require('../utils/ApiError');
 const { getPlan } = require('../config/plans');
+const { env } = require('../config/env');
 const crypto = require('crypto');
 
 paymentsService.registerProvider('paynow', paynowService);
@@ -14,7 +15,9 @@ async function getProviders(req, res) {
         {
           name: 'paynow',
           label: 'Paynow (EcoCash, OneMoney, Zimswitch, Cards)',
-          available: Boolean(process.env.PAYNOW_INTEGRATION_ID && process.env.PAYNOW_INTEGRATION_KEY),
+          available: Boolean(
+            env.payments.paynow.integrationId && env.payments.paynow.integrationKey
+          ),
           currencies: ['USD'],
           countries: ['ZW'],
         },

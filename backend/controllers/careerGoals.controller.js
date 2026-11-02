@@ -1,5 +1,6 @@
 // Career goal endpoints. The user id always comes from the token.
 const careerGoalsService = require('../services/careerGoals.service');
+const activityService = require('../services/activity.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 
@@ -28,6 +29,16 @@ async function create(req, res) {
     req.validated.body
   );
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career_goal.created',
+    entityType: 'career_goal',
+    entityId: goal.id,
+    title: `Created career goal: ${goal.title || 'Untitled'}`,
+    metadata: { status: goal.status },
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: { goal },
@@ -46,6 +57,22 @@ async function update(req, res) {
 
   if (!goal) throw ApiError.notFound(`Career goal ${goalId} was not found`);
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType:
+      req.validated.body.status === 'completed'
+        ? 'career_goal.completed'
+        : 'career_goal.updated',
+    entityType: 'career_goal',
+    entityId: goal.id,
+    title:
+      req.validated.body.status === 'completed'
+        ? `Completed career goal: ${goal.title || 'Untitled'}`
+        : `Updated career goal: ${goal.title || 'Untitled'}`,
+    metadata: { status: goal.status },
+    req,
+  });
+
   return sendSuccess(res, { data: { goal }, message: 'Career goal updated' });
 }
 
@@ -55,6 +82,15 @@ async function remove(req, res) {
   const deleted = await careerGoalsService.deleteGoal(req.user.id, goalId);
 
   if (!deleted) throw ApiError.notFound(`Career goal ${goalId} was not found`);
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'career_goal.deleted',
+    entityType: 'career_goal',
+    entityId: goalId,
+    title: 'Deleted a career goal',
+    req,
+  });
 
   return sendSuccess(res, {
     data: { goal_id: goalId },

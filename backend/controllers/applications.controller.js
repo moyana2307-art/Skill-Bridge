@@ -1,5 +1,6 @@
 // Application tracking endpoints.
 const applicationsService = require('../services/applications.service');
+const activityService = require('../services/activity.service');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 
@@ -40,6 +41,16 @@ async function create(req, res) {
     throw ApiError.badRequest('Provide an opportunity or a title');
   }
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'application.created',
+    entityType: 'application',
+    entityId: result.application.id,
+    title: `Added application: ${result.application.title || 'Untitled'}`,
+    metadata: { status: result.application.status },
+    req,
+  });
+
   return sendSuccess(res, {
     statusCode: 201,
     data: { application: result.application },
@@ -62,6 +73,16 @@ async function update(req, res) {
     throw ApiError.notFound('That opportunity was not found');
   }
 
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'application.updated',
+    entityType: 'application',
+    entityId: result.application.id,
+    title: `Updated application: ${result.application.title || 'Untitled'}`,
+    metadata: { status: result.application.status },
+    req,
+  });
+
   return sendSuccess(res, {
     data: { application: result.application },
     message: 'Application updated',
@@ -76,6 +97,16 @@ async function remove(req, res) {
   );
 
   if (!deleted) throw ApiError.notFound(`Application ${applicationId} was not found`);
+
+  await activityService.logActivity({
+    userId: req.user.id,
+    eventType: 'application.deleted',
+    entityType: 'application',
+    entityId: applicationId,
+    title: 'Deleted an application',
+    req,
+  });
+
   return sendSuccess(res, {
     data: { application_id: applicationId },
     message: 'Application deleted',

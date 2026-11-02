@@ -3,20 +3,19 @@
 // Note: Zimbabwean businesses can use Paynow for EcoCash/OneMoney/Zimswitch/cards.
 // Stripe not directly available to Zimbabwean businesses.
 const crypto = require('crypto');
+const { env } = require('../../config/env');
 const ApiError = require('../../utils/ApiError');
 const paymentsService = require('../payments');
 const subscriptionsService = require('../subscriptions.service');
 const notificationsService = require('../notifications.service');
+const activityService = require('../activity.service');
 
 const PAYNOW_CHECKOUT_URL = 'https://www.paynow.co.zw/interface/initiatetransaction';
 const PAYNOW_PAID_STATUSES = ['paid', 'awaiting delivery', 'delivered'];
 const PAYNOW_PENDING_STATUSES = ['created', 'sent', 'pending'];
 
 function getConfig() {
-  const integrationId = process.env.PAYNOW_INTEGRATION_ID;
-  const integrationKey = process.env.PAYNOW_INTEGRATION_KEY;
-  const resultUrl = process.env.PAYNOW_RESULT_URL;
-  const returnUrl = process.env.PAYNOW_RETURN_URL;
+  const { integrationId, integrationKey, resultUrl, returnUrl } = env.payments.paynow;
   if (!integrationId || !integrationKey) {
     throw ApiError.internal(
       'Paynow is not configured. Set PAYNOW_INTEGRATION_ID and PAYNOW_INTEGRATION_KEY.'
@@ -122,6 +121,7 @@ async function activatePaidPlan(record) {
     source: 'payment',
     status: 'active',
     periodEnd,
+    eventType: 'payment_activated',
   });
   await notificationsService.notify(record.user_id, {
     type: 'announcement',
@@ -142,7 +142,9 @@ async function revokePaidPlan(record) {
     return;
   }
 
-  await subscriptionsService.resetToFree(record.user_id);
+  await subscriptionsService.resetToFree(record.user_id, {
+    eventType: 'payment_revoked',
+  });
   await notificationsService.notify(record.user_id, {
     type: 'announcement',
     title: 'Plan access ended',
@@ -254,6 +256,26 @@ async function handleWebhook(payload, rawBody = null) {
       await activatePaidPlan(result.record);
     } else if (['cancelled', 'refunded'].includes(result.record.status)) {
       await revokePaidPlan(result.record);
+    }
+
+    if (
+      ['paid', 'failed', 'cancelled', 'refunded', 'disputed'].includes(
+        result.record.status
+      )
+    ) {
+      await activityService.logActivity({
+        userId: result.record.user_id,
+        eventType: `payment.${result.record.status}`,
+        entityType: 'payment',
+        entityId: result.record.id,
+        title: `Payment ${result.record.status}`,
+        metadata: {
+          plan_code: result.record.plan_code,
+          amount_cents: result.record.amount_cents,
+          currency: result.record.currency,
+          provider: 'paynow',
+        },
+      });
     }
   }
 

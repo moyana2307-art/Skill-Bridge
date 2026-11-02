@@ -2,12 +2,12 @@
 // Usage: npm --prefix backend run db:migrate
 const fs = require('fs');
 const path = require('path');
-const { pool } = require('../config/db');
+const { pool, migrationPool } = require('../config/db');
 
 const migrationsDir = path.join(__dirname, '..', 'sql', 'migrations');
 
 async function run() {
-  const client = await pool.connect();
+  const client = await migrationPool.connect();
   try {
     await client.query(
       `CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -50,7 +50,8 @@ async function run() {
     console.log('Migrations complete.');
   } finally {
     client.release();
-    await pool.end();
+    await migrationPool.end();
+    if (migrationPool !== pool) await pool.end();
   }
 }
 
