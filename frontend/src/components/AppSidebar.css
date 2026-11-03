@@ -7,7 +7,7 @@
   width: var(--sidebar-width, 264px);
   height: 100vh;
   height: 100dvh;
-  background-color: var(--color-cloud);
+  background-color: var(--color-surface);
   color: var(--color-text);
   border-right: 1px solid var(--color-border);
   transition: width 0.22s ease, transform 0.22s ease;
@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 20px 14px 18px;
+  padding: 18px 14px 14px;
 }
 
 .app-sidebar__brand {
@@ -113,15 +113,15 @@
 }
 
 .app-sidebar__group + .app-sidebar__group {
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .app-sidebar__group-label {
-  padding: 16px 12px 7px;
+  padding: 14px 12px 6px;
   color: var(--color-text-light);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -130,18 +130,18 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 12px;
-  border-radius: 10px;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: 9px;
   color: var(--color-text-light);
-  font-size: 0.91rem;
+  font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
   transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 .app-sidebar__link + .app-sidebar__link {
-  margin-top: 3px;
+  margin-top: 2px;
 }
 
 .app-sidebar__link:hover {

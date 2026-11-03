@@ -12,10 +12,8 @@ import {
   Compass,
   GraduationCap,
   Laptop,
-  Lightbulb,
   MapPin,
   Route,
-  Search,
   ShieldCheck,
   Sparkles,
   Target,
@@ -70,29 +68,6 @@ const FEATURES = [
     title: 'Progress tracking',
     text: 'Complete roadmap tasks and keep a visible record of the skills you are building over time.',
     points: ['Tick off completed tasks', 'Keep your skills current', 'Review your next milestone'],
-  },
-];
-
-const STEPS = [
-  {
-    number: '01',
-    title: 'Create your profile',
-    text: 'Add your education, skills, location, and career interests so the guidance starts from your real situation.',
-  },
-  {
-    number: '02',
-    title: 'Analyse your gaps',
-    text: 'Use AI to compare where you are today with what your target career expects from you.',
-  },
-  {
-    number: '03',
-    title: 'Follow your roadmap',
-    text: 'Work through a practical plan with projects, resources, and tasks you can complete at your own pace.',
-  },
-  {
-    number: '04',
-    title: 'Find opportunities',
-    text: 'Explore real listings, save useful ones, and decide which next step fits your goal and your life.',
   },
 ];
 
@@ -222,7 +197,7 @@ function Home() {
             <span className="home-hero__highlight">Unlock opportunities.</span>
           </>
         }
-        description="Turn your profile into a clear skills plan, a practical learning roadmap, and relevant opportunities - so you always know what to do next."
+        description="Turn your profile into a clear skills plan, a practical roadmap, and relevant opportunities."
         actions={
           <>
             <Link to={workspaceAction.to} className="btn btn-primary">
@@ -288,61 +263,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="section home-direction">
-        <div className="container home-direction__grid">
-          <div className="home-direction__intro">
-            <span className="home-eyebrow">Why it feels hard</span>
-            <h2>You do not need more advice. You need a next step.</h2>
-            <p>
-              Career advice is scattered across social feeds, course pages, and
-              job boards. SkillBridge brings the important questions into one
-              place so you can move with more confidence.
-            </p>
-          </div>
-
-          <div className="home-direction__points">
-            <article className="card home-direction__point">
-              <span className="home-direction__icon">
-                <Search size={22} aria-hidden="true" />
-              </span>
-              <div>
-                <h3>Know where you stand</h3>
-                <p>
-                  See the skills you already have and the ones your target role
-                  expects.
-                </p>
-              </div>
-            </article>
-
-            <article className="card home-direction__point">
-              <span className="home-direction__icon">
-                <Lightbulb size={22} aria-hidden="true" />
-              </span>
-              <div>
-                <h3>Know what to learn next</h3>
-                <p>
-                  Get a focused plan instead of another endless list of courses.
-                </p>
-              </div>
-            </article>
-
-            <article className="card home-direction__point">
-              <span className="home-direction__icon">
-                <Compass size={22} aria-hidden="true" />
-              </span>
-              <div>
-                <h3>Know where to look</h3>
-                <p>
-                  Find jobs, internships, scholarships, and training in one
-                  discovery page.
-                </p>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section className="section section--soft home-features">
+      <section className="section home-features">
         <div className="container">
           <div className="home-section-head">
             <span className="home-eyebrow">What SkillBridge does</span>
@@ -384,29 +305,6 @@ function Home() {
                 </article>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      <section className="section home-steps">
-        <div className="container">
-          <div className="home-section-head">
-            <span className="home-eyebrow">How it works</span>
-            <h2>A clear path from profile to progress.</h2>
-            <p>
-              Start with what you know today, then build toward the work you
-              want next.
-            </p>
-          </div>
-
-          <div className="home-steps__grid">
-            {STEPS.map((step) => (
-              <article className="card home-step" key={step.number}>
-                <span className="home-step__number">{step.number}</span>
-                <h3>{step.title}</h3>
-                <p>{step.text}</p>
-              </article>
-            ))}
           </div>
         </div>
       </section>

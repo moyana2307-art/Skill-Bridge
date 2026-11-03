@@ -27,7 +27,7 @@ import './AppSidebar.css';
 
 const NAV_GROUPS = [
   {
-    label: 'Your space',
+    label: 'Workspace',
     items: [
       { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/profile', label: 'Profile', icon: UserRound },
@@ -36,12 +36,14 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: 'Plan and grow',
+    label: 'Grow',
     items: [
       { to: '/analysis', label: 'AI analysis', icon: BrainCircuit },
       { to: '/career', label: 'Career intelligence', icon: Compass },
       { to: '/roadmaps', label: 'Roadmaps', icon: Map },
       { to: '/opportunities', label: 'Opportunities', icon: Compass },
+      { to: '/projects', label: 'Projects', icon: FolderKanban },
+      { to: '/analytics', label: 'Analytics', icon: BarChart3 },
     ],
   },
   {
@@ -50,8 +52,6 @@ const NAV_GROUPS = [
       { to: '/mentor', label: 'AI mentor', icon: MessageCircle },
       { to: '/career-studio', label: 'Career studio', icon: FileText },
       { to: '/applications', label: 'Applications', icon: FileText },
-      { to: '/projects', label: 'Projects', icon: FolderKanban },
-      { to: '/analytics', label: 'Analytics', icon: BarChart3 },
     ],
   },
   {
