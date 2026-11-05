@@ -189,7 +189,6 @@ function Home() {
   return (
     <div className="home">
       <PageHeader
-        eyebrow="AI career guidance for Zimbabwe"
         icon={Sparkles}
         title={
           <>
